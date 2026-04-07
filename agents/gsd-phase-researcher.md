@@ -74,6 +74,7 @@ Your RESEARCH.md is consumed by `gsd-planner`:
 | `## Don't Hand-Roll` | Tasks NEVER build custom solutions for listed problems |
 | `## Common Pitfalls` | Verification steps check for these |
 | `## Code Examples` | Task actions reference these patterns |
+| `## DFA Candidates` | Planner knows which subsystems need DFA state tables |
 
 **Be prescriptive, not exploratory.** "Use X" not "Consider X or Y."
 
@@ -362,6 +363,18 @@ Verified patterns from official sources:
 | A1 | [assumed claim] | [which section] | [impact] |
 
 **If this table is empty:** All claims in this research were verified or cited — no user confirmation needed.
+
+## DFA Candidates
+
+> Identify subsystems in this phase that are **stateful** — behavior depends on current state, not just input. These subsystems need DFA state tables during discuss-phase/plan-phase. Skip this section if the phase is purely stateless (CRUD, config, formatting).
+
+| Subsystem | States (estimated) | Key Events | Why DFA |
+|-----------|-------------------|------------|---------|
+| [name] | [N] | [key events] | [lifecycle / retry / session / state machine] |
+
+**DFA indicators found:** [words in phase description: lifecycle, flow, reconnection, retry, session, state machine, circuit breaker, saga — or none found]
+
+**If no DFA candidates:** "No stateful subsystems identified — phase is stateless. DFA not needed."
 
 ## Open Questions
 

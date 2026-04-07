@@ -360,6 +360,42 @@ grep -E "\{.*$state_var.*\}|\{$state_var\." "$component" 2>/dev/null
 
 Status: WIRED (state displayed) | NOT_WIRED (state exists, not rendered)
 
+## Step 5b: DFA Transition Coverage (if DFA artifacts exist)
+
+When DFA state tables exist in the phase directory, verify that every transition has implementation and test coverage.
+
+```bash
+ls "$PHASE_DIR"/*-DFA-*.md 2>/dev/null
+ls "$PHASE_DIR"/*-DFA-SCENARIOS.md 2>/dev/null
+```
+
+**If DFA artifacts found:**
+
+1. **Parse all transition IDs** from DFA state tables: T-XX (transitions), S-XX (self-loops), F-XX (forbidden)
+2. **For each T-XX / S-XX:** Verify a matching reducer case or handler exists in code (grep for state+event combination)
+3. **For each F-XX:** Verify error handling exists (the forbidden event in that state is explicitly rejected/logged)
+4. **Parse scenario matrix IDs:** SC-XX (critical), SH-XX (high), FC-XX (failure cascades), EO-XX (event ordering)
+5. **For each SC-XX:** Verify a matching integration test exists
+6. **CRITICAL scenarios (SC-XX) must have 100% test coverage** — any gap is a blocker
+
+**DFA coverage report (add to VERIFICATION.md):**
+
+```markdown
+### DFA Transition Coverage
+
+| ID | Type | State + Event | Implemented | Test Exists | Status |
+|----|------|---------------|-------------|-------------|--------|
+| T-01 | transition | DISCONNECTED + connect_requested | ✓ | ✓ | ✓ |
+| F-01 | forbidden | DISCONNECTED + tick_received | ✓ | ✓ | ✓ |
+| SC-01 | scenario | STREAMING×HAS_POSITION + connection_lost | ✓ | ✓ | ✓ |
+| SC-02 | scenario | RECONNECTING×HAS_POSITION + session_ended | ✗ | ✗ | ✗ GAP |
+
+**DFA Score:** {covered}/{total} transitions verified
+**Scenario Score:** {covered}/{total} CRITICAL scenarios tested
+```
+
+**If no DFA artifacts found:** Skip this step entirely.
+
 ## Step 6: Check Requirements Coverage
 
 **6a. Extract requirement IDs from PLAN frontmatter:**

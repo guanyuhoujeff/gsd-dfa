@@ -1,0 +1,244 @@
+# DFA Methodology for GSD
+
+**Version:** 0.1.0
+**Author:** barai (fork extension)
+**Upstream:** [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) by Lex Christopherson (TACHES), MIT License
+
+---
+
+## Why DFA in GSD
+
+GSD's original workflow produces **task-oriented** plans: "do X, then Y, then Z." This works well for feature buildout but leaves gaps when planning **stateful systems** — systems where behavior depends on *what state the system is in* when an event arrives.
+
+Examples of stateful systems where natural language planning fails:
+
+| Domain | Hidden complexity |
+|--------|-------------------|
+| Trading systems | Session state x connection state x position state |
+| Auth flows | Token lifecycle x session x device trust |
+| CI/CD pipelines | Build state x deployment state x rollback state |
+| IoT devices | Connection state x firmware state x command queue |
+| Order processing | Payment state x fulfillment state x refund state |
+
+**The core problem:** Natural language descriptions say "when X happens, do Y" but don't force you to answer "what happens in *every other* state when X arrives?" The unanswered combinations become production bugs.
+
+**DFA forces completeness.** Every cell in the State x Event matrix must be filled — either with a transition or an explicit "reject/ignore with reason."
+
+---
+
+## Core Concepts
+
+### Deterministic Finite Automaton (DFA)
+
+A DFA is defined by a 5-tuple `(Q, Σ, δ, q₀, F)`:
+
+| Symbol | Meaning | In GSD context |
+|--------|---------|----------------|
+| Q | Finite set of states | All states a subsystem can be in |
+| Σ | Finite set of input symbols (events) | All events the subsystem reacts to |
+| δ | Transition function: Q × Σ → Q | The transition table |
+| q₀ | Initial state | System state at startup |
+| F | Set of accepting/final states | Terminal states (shutdown, error-halt) |
+
+### Extended DFA for Software Systems
+
+Pure DFA has no side effects. Real systems need **actions** on transitions and **guards** (conditions). We extend to:
+
+```
+δ(state, event) → (next_state, action, guard?)
+```
+
+- **Guard**: Optional boolean condition that must be true for the transition to fire. If false, the event is handled by a fallback row. Guards use natural language but must be specific enough that an executor doesn't need to guess (Good: `retry_count < max_retries`; Bad: `conditions allow`).
+- **Action**: What the system does during the transition (emit event, update data, call API, start/cancel timer).
+
+### Hierarchical States (Optional)
+
+When a group of states shares most transitions and differs only in a few, they can be modeled as **sub-states** under a common **superstate** (Harel Statecharts). This avoids duplicating identical transition rows.
+
+```
+STREAMING (superstate)
+├── STREAMING.NORMAL
+├── STREAMING.THROTTLED
+└── STREAMING.STALE
+```
+
+- Transitions defined on the superstate **inherit to all sub-states**.
+- Sub-states can define **override transitions** for specific behavior.
+- Use when: a group of 3+ states shares >50% of their transitions.
+- Skip when: states < 8 total, or duplication is minimal and tolerable.
+
+Hierarchical modeling is optional. Start flat; promote to hierarchy only when duplication becomes a readability problem.
+
+---
+
+## Integration with GSD Workflow
+
+DFA modeling integrates at specific points in the existing GSD pipeline:
+
+```
+research-phase  ──→  Identify subsystems that are STATEFUL
+                     (not every phase needs DFA — CRUD doesn't)
+
+discuss-phase   ──→  Define states, events, guards
+                     Fill transition table
+                     Mark forbidden transitions
+                     Output: DFA section in CONTEXT.md
+
+plan-phase      ──→  Each transition group = one plan/task
+                     Planner reads DFA as specification
+                     Decision coverage matrix maps D-XX to transitions
+
+execute-phase   ──→  Implement reducer/handler per transition
+                     Each transition = unit test
+
+verify-work     ──→  Verify transition coverage
+                     Check no unhandled state×event combinations
+                     Verify forbidden transitions are explicitly rejected
+```
+
+### When to Use DFA
+
+**Use DFA when:**
+- The phase involves a subsystem with 3+ distinct states
+- Behavior depends on current state (not just input)
+- The phase description uses words like: lifecycle, flow, reconnection, retry, session, state machine, circuit breaker, saga
+
+**Skip DFA when:**
+- Pure CRUD operations
+- Stateless transformations (data pipeline, formatting)
+- UI layout / styling work
+- Configuration / dependency management
+
+---
+
+## Modeling Process
+
+### Step 1: Identify the Subsystem Boundary
+
+One DFA per subsystem or lifecycle. Don't model the entire system as one DFA — it explodes combinatorially.
+
+Good boundaries:
+- Connection lifecycle (connect → stream → disconnect → reconnect)
+- Order lifecycle (pending → filled → cancelled)
+- Position lifecycle (flat → opening → holding → closing)
+- Session lifecycle (pre-market → trading → post-market → closed)
+
+### Step 2: Enumerate States
+
+List all states the subsystem can be in. States must be:
+- **Mutually exclusive**: The system is in exactly one state at a time
+- **Collectively exhaustive**: No unlisted state is possible
+- **Observable**: You can determine the current state from system data
+
+Each state needs:
+- **Name**: UPPER_SNAKE_CASE (matches code enum convention)
+- **Description**: One sentence — when is the system in this state?
+- **Invariants**: What must be true while in this state?
+
+### Step 3: Enumerate Events
+
+List all events that the subsystem must react to. Events must be:
+- **Atomic**: One event = one thing happened
+- **External to the DFA**: Events come from outside (user input, timer, other subsystem)
+- **Named consistently**: Use the project's event naming convention
+
+### Step 4: Fill the Transition Table
+
+For every `(state, event)` pair, specify:
+1. **Next state** (or `—` for self-loop / no transition)
+2. **Action** (what happens during the transition)
+3. **Guard** (optional condition)
+
+**Critical rule: No empty cells.** Every combination must be one of:
+- **Transition**: State changes, action fires
+- **Self-loop**: State unchanged, action fires (e.g., logging)
+- **Ignored**: Explicitly marked as ignored with reason
+- **Forbidden**: Should never happen; if it does, it's a bug — log error + alert
+
+### Step 5: Cross-Subsystem Scenarios
+
+When multiple DFAs interact, enumerate critical state combinations. You don't need the full Cartesian product — focus on:
+- States where **both subsystems are in non-steady states** (both transitioning)
+- Events that **affect multiple subsystems** simultaneously
+- **Failure modes**: What if subsystem A is degraded while B needs it?
+
+---
+
+## Artifacts Produced
+
+| Artifact | Location | Consumer |
+|----------|----------|----------|
+| DFA State Table | `{phase_num}-DFA-{subsystem}.md` | planner, executor, verifier |
+| Scenario Matrix | `{phase_num}-DFA-SCENARIOS.md` | planner (integration tasks), verifier |
+| Test Skeletons | Generated during execute-phase | executor, tdd-guide |
+
+---
+
+## Relationship to Existing GSD Concepts
+
+| GSD Concept | DFA Equivalent |
+|-------------|----------------|
+| Locked Decision (D-XX) | May constrain which states/events exist |
+| Task in PLAN.md | One or more transitions to implement |
+| Success Criteria | All transitions implemented + tested |
+| Verification | Transition coverage = 100% |
+| Forbidden transition | Explicit error handling requirement |
+| Scenario Matrix row | Integration test case |
+
+---
+
+## Notation Conventions
+
+### State Names
+```
+UPPER_SNAKE_CASE matching code enums
+Examples: DISCONNECTED, STREAMING, CIRCUIT_OPEN
+```
+
+### Event Names
+```
+Project event convention (namespace.action for event-driven systems)
+Timers are events like any other — Source column marks them as "internal timer"
+Examples: connection_lost, tick_received, retry_timeout, circuit_reset
+```
+
+### Transition Table Format
+```
+| Current State | Event | Guard | Next State | Action |
+```
+
+### Forbidden Transition Format
+```
+| Current State | Event | Handling | Reason |
+```
+
+### Scenario Matrix Format
+```
+| # | Subsystem A State | Subsystem B State | Event | Expected Behavior |
+```
+
+### Failure Cascade Format
+```
+| FC-XX | Origin Failure | Affected Subsystem | Cascade Effect | Mitigation |
+```
+
+### Event Ordering Format
+```
+| EO-XX | Sequence A (expected) | Sequence B (race condition) | Outcome Difference | Handling |
+```
+
+### Guard Format
+```
+Natural language, but specific enough for an executor to implement without guessing.
+Good: "retry_count < max_retries", "in trading session AND no open position"
+Bad:  "conditions are met", "when appropriate"
+```
+
+---
+
+## References
+
+- Hopcroft, Motwani, Ullman — *Introduction to Automata Theory, Languages, and Computation*
+- Harel — Statecharts: A Visual Formalism for Complex Systems (1987)
+- XState documentation — Practical state machines in JavaScript/TypeScript
+- Original GSD: [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)

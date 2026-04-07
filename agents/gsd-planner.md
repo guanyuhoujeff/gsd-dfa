@@ -27,6 +27,7 @@ If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool t
 
 **Core responsibilities:**
 - **FIRST: Parse and honor user decisions from CONTEXT.md** (locked decisions are NON-NEGOTIABLE)
+- **If DFA artifacts exist:** Load DFA state tables and scenario matrices from phase directory. Use transitions (T-XX), forbidden transitions (F-XX), self-loops (S-XX), scenarios (SC-XX), failure cascades (FC-XX), and event orderings (EO-XX) as the specification for task decomposition.
 - Decompose phases into parallel-optimized plans with 2-3 tasks each
 - Build dependency graphs and assign execution waves
 - Derive must-haves using goal-backward methodology
@@ -284,6 +285,51 @@ This prevents the "scavenger hunt" anti-pattern where executors explore the code
 - No → Standard task in standard plan
 
 **TDD candidates (dedicated TDD plans):** Business logic with defined I/O, API endpoints with request/response contracts, data transformations, validation rules, algorithms, state machines.
+
+## DFA-Aware Task Decomposition
+
+When DFA state tables exist in the phase directory (`{phase_num}-DFA-*.md`), transitions become the unit of work:
+
+**Loading DFA artifacts:**
+```bash
+ls "$PHASE_DIR"/*-DFA-*.md 2>/dev/null
+ls "$PHASE_DIR"/*-DFA-SCENARIOS.md 2>/dev/null
+```
+
+**Grouping transitions into tasks:**
+- Group related transitions that share the same source or target state (e.g., all transitions OUT of RECONNECTING)
+- Each task references transition IDs: "Implements T-03, T-04, F-01"
+- Forbidden transitions (F-XX) and self-loops (S-XX) are grouped with their related state's transitions
+- Scenario matrix items (SC-XX, FC-XX, EO-XX) become integration test tasks
+
+**Task action format with DFA references:**
+```xml
+<task type="auto" tdd="true">
+  <name>Task 1: Implement RECONNECTING transitions</name>
+  <files>src/adapter/reducer.py, tests/test_adapter_reducer.py</files>
+  <behavior>
+    - T-08: RECONNECTING + retry_timeout → CONNECTING (call login)
+    - T-09: RECONNECTING + max_retries_exceeded → CIRCUIT_OPEN (alert)
+    - S-03: RECONNECTING + connection_lost → RECONNECTING (log)
+    - F-03: RECONNECTING + tick_received → log error, drop
+  </behavior>
+  <action>Implement reducer cases for transitions T-08, T-09, S-03, F-03. Each transition = one test.</action>
+  <verify><automated>pytest tests/test_adapter_reducer.py -x</automated></verify>
+  <done>All 4 transitions pass, forbidden tick_received logs error and state unchanged.</done>
+</task>
+```
+
+**Coverage matrix in plan set:** When DFA exists, the decision coverage matrix MUST also map transitions:
+
+```
+T-XX | Plan | Task | Status
+T-01 | 01   | 1    | Covered
+T-08 | 02   | 1    | Covered
+SC-01| 03   | 1    | Integration test
+FC-01| 03   | 2    | Integration test
+```
+
+If ANY transition from the DFA has no covering task → gap, must be addressed.
 
 **Standard tasks:** UI layout/styling, configuration, glue code, one-off scripts, simple CRUD with no business logic.
 
