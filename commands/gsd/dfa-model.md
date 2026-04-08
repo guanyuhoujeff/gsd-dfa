@@ -1,7 +1,7 @@
 ---
 name: gsd:dfa-model
-description: Create a DFA state table for a subsystem within a phase. Defines states, events, transitions, forbidden transitions, and completeness matrix. Use when a phase involves stateful behavior (lifecycle, retry, session, circuit breaker).
-argument-hint: "<phase> <subsystem-name>"
+description: Create a DFA state table for a subsystem. Supports both phase-bound (within a GSD phase) and standalone mode (retroactive audit of existing code). Defines states, events, transitions, forbidden transitions, and completeness matrix.
+argument-hint: "<subsystem-name> [--phase <N>] [--standalone]"
 allowed-tools:
   - Read
   - Write
@@ -12,19 +12,25 @@ allowed-tools:
 ---
 
 <objective>
-Build a complete DFA (Deterministic Finite Automaton) state table for one subsystem or lifecycle within a phase.
+Build a complete DFA (Deterministic Finite Automaton) state table for one subsystem or lifecycle.
+
+**Two modes:**
+- **Phase-bound** (default when `--phase N` given): DFA tied to a GSD phase, reads phase context
+- **Standalone** (default when no phase, or `--standalone`): Retroactive DFA for existing code, reads source directly
 
 **How it works:**
-1. Load phase context (ROADMAP, CONTEXT.md, RESEARCH.md)
+1. Load context (phase context OR source code analysis)
 2. Identify the subsystem boundary (owns/depends/produces)
 3. Enumerate all states with invariants
 4. Enumerate all events with sources
 5. Fill the complete transition table (transitions, self-loops, forbidden, ignored)
 6. Generate completeness matrix (N x M — no empty cells)
 7. Optionally generate mermaid state diagram
-8. Write DFA state table to phase directory
+8. Write DFA state table
 
-**Output:** `{phase_num}-DFA-{subsystem}.md` — complete state machine specification consumed by planner, executor, and verifier.
+**Output:**
+- Phase-bound: `.planning/phases/XX-name/{phase_num}-DFA-{subsystem}.md`
+- Standalone: `.planning/dfa/DFA-{subsystem}.md`
 </objective>
 
 <execution_context>
@@ -32,25 +38,43 @@ Build a complete DFA (Deterministic Finite Automaton) state table for one subsys
 </execution_context>
 
 <context>
-Phase number: first argument from $ARGUMENTS
-Subsystem name: second argument from $ARGUMENTS
+Subsystem name: first argument from $ARGUMENTS
+Phase number: optional `--phase N` flag
+Standalone: `--standalone` flag (default when no phase specified)
 
-Context files resolved via phase directory:
+**Phase-bound context** (when `--phase` given):
 - `.planning/ROADMAP.md` — phase goal and success criteria
 - `.planning/phases/XX-name/{phase_num}-CONTEXT.md` — locked decisions (if exists)
 - `.planning/phases/XX-name/{phase_num}-RESEARCH.md` — DFA candidates section (if exists)
+
+**Standalone context** (when no phase):
+- Source code in the subsystem directory (auto-detected or specified)
+- Existing state enums, reducers, service files
+- CLAUDE.md / project docs for architectural context
 </context>
 
 <process>
 ## Step 1: Load Context
 
+### Phase-bound mode:
 ```bash
-PHASE_NUM="${1}"
-SUBSYSTEM="${2}"
+SUBSYSTEM="${1}"
+PHASE_NUM="${2}"  # from --phase flag
 PHASE_DIR=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE_NUM}" 2>/dev/null | node -e "d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).phase_dir)}catch{}})")
 ```
-
 Read ROADMAP.md for phase goal. Read CONTEXT.md and RESEARCH.md if they exist.
+
+### Standalone mode:
+```bash
+SUBSYSTEM="${1}"
+# Auto-detect subsystem directory
+find . -type d -name "${SUBSYSTEM}" | head -5
+```
+Read the subsystem's source files directly:
+- State enums / models (e.g., `models.py`, `state.py`)
+- Reducer / handler (e.g., `reducer.py`, `service.py`)
+- Events (e.g., `events.py`)
+- Existing tests for behavioral clues
 
 ## Step 2: Model the DFA
 
@@ -74,7 +98,9 @@ Follow the DFA State Table template (`dfa-state-table.md`):
 
 ## Step 3: Write DFA State Table
 
-Write to: `$PHASE_DIR/{phase_num}-DFA-{subsystem}.md`
+Write to:
+- **Phase-bound:** `$PHASE_DIR/{phase_num}-DFA-{subsystem}.md`
+- **Standalone:** `.planning/dfa/DFA-{subsystem}.md` (create `.planning/dfa/` if it doesn't exist)
 
 ## Step 4: Return Result
 

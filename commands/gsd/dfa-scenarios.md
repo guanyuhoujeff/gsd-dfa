@@ -1,7 +1,7 @@
 ---
 name: gsd:dfa-scenarios
-description: Generate cross-subsystem scenario matrix from multiple DFA state tables. Identifies critical state combinations, failure cascades, and event ordering sensitivities. Run after /gsd:dfa-model when phase has 2+ interacting DFAs.
-argument-hint: "<phase>"
+description: Generate cross-subsystem scenario matrix from multiple DFA state tables. Identifies critical state combinations, failure cascades, and event ordering sensitivities. Run after /gsd:dfa-model when 2+ interacting DFAs exist.
+argument-hint: "[--phase <N>] [--dir <path>]"
 allowed-tools:
   - Read
   - Write
@@ -15,14 +15,16 @@ allowed-tools:
 Generate a scenario matrix capturing dangerous cross-subsystem state combinations that individual DFA tests would miss.
 
 **How it works:**
-1. Load all DFA state tables in the phase
+1. Load all DFA state tables (from phase or standalone directory)
 2. Identify interaction points (events produced by one DFA consumed by another)
 3. Enumerate critical state combinations by risk level
 4. Identify failure cascades (A fails → how does it affect B?)
 5. Identify event ordering sensitivities (A then B vs B then A)
-6. Write scenario matrix to phase directory
+6. Write scenario matrix
 
-**Output:** `{phase_num}-DFA-SCENARIOS.md` — cross-subsystem scenarios consumed by planner (integration tasks) and verifier (coverage checks).
+**Output:**
+- Phase-bound: `.planning/phases/XX-name/{phase_num}-DFA-SCENARIOS.md`
+- Standalone: `.planning/dfa/DFA-cross-subsystem-scenarios.md`
 </objective>
 
 <execution_context>
@@ -30,11 +32,14 @@ Generate a scenario matrix capturing dangerous cross-subsystem state combination
 </execution_context>
 
 <context>
-Phase number: from $ARGUMENTS
+Arguments:
+- `--phase N`: Load DFAs from phase directory
+- `--dir path`: Load DFAs from specified directory
+- No argument: Search both `.planning/dfa/DFA-*.md` and `.planning/phases/*/??-DFA-*.md`
 
-DFA files resolved from phase directory:
 ```bash
-ls .planning/phases/*/"${PHASE_NUM}"-DFA-*.md 2>/dev/null | grep -v SCENARIOS
+# Find all DFA files (excluding scenario files themselves)
+ls .planning/dfa/DFA-*.md .planning/phases/*/??-DFA-*.md 2>/dev/null | grep -vi scenario
 ```
 
 Requires 2+ DFA state tables. If only 1 DFA exists, report: "Single DFA — scenario matrix not needed. Cross-subsystem scenarios require 2+ interacting DFAs."
@@ -89,7 +94,9 @@ For events that can arrive in different orders:
 
 ## Step 6: Write Scenario Matrix
 
-Write to: `$PHASE_DIR/{phase_num}-DFA-SCENARIOS.md`
+Write to:
+- **Phase-bound:** `$PHASE_DIR/{phase_num}-DFA-SCENARIOS.md`
+- **Standalone:** `.planning/dfa/DFA-cross-subsystem-scenarios.md`
 
 Include coverage summary with test counts per priority level.
 

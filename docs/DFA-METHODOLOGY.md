@@ -73,28 +73,45 @@ Hierarchical modeling is optional. Start flat; promote to hierarchy only when du
 
 ## Integration with GSD Workflow
 
+DFA supports two usage modes:
+
+### Mode 1: Phase-Bound (new feature development)
+
 DFA modeling integrates at specific points in the existing GSD pipeline:
 
 ```
-research-phase  ──→  Identify subsystems that are STATEFUL
+research-phase  ──→  /gsd:dfa-scan to identify STATEFUL subsystems
                      (not every phase needs DFA — CRUD doesn't)
 
-discuss-phase   ──→  Define states, events, guards
-                     Fill transition table
-                     Mark forbidden transitions
-                     Output: DFA section in CONTEXT.md
+discuss-phase   ──→  /gsd:dfa-model --phase N to define states, events, guards
+                     /gsd:dfa-verify to validate completeness
+                     /gsd:dfa-scenarios for cross-subsystem gaps
 
 plan-phase      ──→  Each transition group = one plan/task
                      Planner reads DFA as specification
-                     Decision coverage matrix maps D-XX to transitions
+                     /gsd:dfa-tests to generate test skeletons
 
 execute-phase   ──→  Implement reducer/handler per transition
-                     Each transition = unit test
+                     Fill in test skeletons
 
-verify-work     ──→  Verify transition coverage
+verify-work     ──→  /gsd:dfa-audit to verify code matches spec
                      Check no unhandled state×event combinations
-                     Verify forbidden transitions are explicitly rejected
 ```
+
+### Mode 2: Standalone (retroactive audit of existing code)
+
+For systems already built without DFA, model retroactively to find gaps:
+
+```
+/gsd:dfa-scan           ──→  Find which subsystems have stateful behavior
+/gsd:dfa-model {name}   ──→  Model each subsystem from existing code
+/gsd:dfa-verify         ──→  Validate the model itself
+/gsd:dfa-scenarios      ──→  Cross-subsystem interaction gaps
+/gsd:dfa-audit          ──→  Compare model vs code → gap list
+  ... fix gaps ...
+```
+
+Standalone DFAs live in `.planning/dfa/` rather than phase directories.
 
 ### When to Use DFA
 
@@ -164,13 +181,39 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 
 ---
 
+## Commands
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `/gsd:dfa-scan` | Scan codebase for DFA candidates | Before modeling — find which subsystems need DFA |
+| `/gsd:dfa-model` | Create DFA state table | When modeling a stateful subsystem |
+| `/gsd:dfa-verify` | Verify DFA completeness | After modeling — check for dead states, missing cells |
+| `/gsd:dfa-scenarios` | Cross-subsystem scenario matrix | After 2+ DFAs exist — find interaction gaps |
+| `/gsd:dfa-audit` | Compare DFA spec vs code | After implementation — find gaps between spec and code |
+| `/gsd:dfa-tests` | Generate test skeletons | After modeling — bootstrap test coverage |
+
+### Typical Workflow
+
+```
+/gsd:dfa-scan              → identify candidates
+/gsd:dfa-model trader      → model each subsystem
+/gsd:dfa-verify            → validate completeness
+/gsd:dfa-scenarios         → cross-subsystem gaps
+/gsd:dfa-tests DFA-file    → generate test skeletons
+  ... implement code ...
+/gsd:dfa-audit             → verify code matches spec
+```
+
+---
+
 ## Artifacts Produced
 
-| Artifact | Location | Consumer |
-|----------|----------|----------|
-| DFA State Table | `{phase_num}-DFA-{subsystem}.md` | planner, executor, verifier |
-| Scenario Matrix | `{phase_num}-DFA-SCENARIOS.md` | planner (integration tasks), verifier |
-| Test Skeletons | Generated during execute-phase | executor, tdd-guide |
+| Artifact | Location (phase-bound) | Location (standalone) | Consumer |
+|----------|----------------------|----------------------|----------|
+| DFA State Table | `.planning/phases/XX-name/{N}-DFA-{subsystem}.md` | `.planning/dfa/DFA-{subsystem}.md` | planner, executor, verifier |
+| Scenario Matrix | `.planning/phases/XX-name/{N}-DFA-SCENARIOS.md` | `.planning/dfa/DFA-cross-subsystem-scenarios.md` | planner (integration tasks), verifier |
+| Audit Report | — | `.planning/dfa/DFA-AUDIT-{date}.md` | developer (fix queue) |
+| Test Skeletons | `tests/.../test_dfa_{subsystem}.py` | same | executor, tdd-guide |
 
 ---
 

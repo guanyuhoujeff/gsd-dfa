@@ -1,7 +1,7 @@
 ---
 name: gsd:dfa-verify
 description: Verify DFA completeness and consistency. Checks for dead states, unreachable states, unhandled events, and guard exhaustiveness. Run after /gsd:dfa-model to validate before planning.
-argument-hint: "<phase> [subsystem-name]"
+argument-hint: "[dfa-file-or-directory] [--phase <N>]"
 allowed-tools:
   - Read
   - Bash
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 
 <objective>
-Verify that DFA state tables in a phase are complete, consistent, and free of modeling errors.
+Verify that DFA state tables are complete, consistent, and free of modeling errors.
 
 **What it checks:**
 1. **No dead states** — every state is reachable from the initial state
@@ -26,20 +26,24 @@ Verify that DFA state tables in a phase are complete, consistent, and free of mo
 </objective>
 
 <context>
-Phase number: first argument from $ARGUMENTS
-Subsystem name: second argument (optional — if omitted, verify all DFAs in the phase)
+Argument: one of:
+- A specific DFA file path → verify that file only
+- A directory → verify all DFA files in it
+- `--phase N` → verify phase-bound DFAs in `.planning/phases/*/N-DFA-*.md`
+- No argument → verify all DFAs found in both `.planning/dfa/` and `.planning/phases/`
 </context>
 
 <process>
 ## Step 1: Find DFA Files
 
 ```bash
-PHASE_NUM="${1}"
-SUBSYSTEM="${2:-}"
-ls .planning/phases/*/"${PHASE_NUM}"-DFA-*.md 2>/dev/null
+# Check all locations
+ls .planning/dfa/DFA-*.md .planning/phases/*/??-DFA-*.md 2>/dev/null
 ```
 
-If subsystem specified, filter to that file only.
+If argument is a file path, verify that file only.
+If `--phase N` given, filter to that phase's DFAs.
+If a directory given, search within it.
 
 ## Step 2: Parse Each DFA
 
