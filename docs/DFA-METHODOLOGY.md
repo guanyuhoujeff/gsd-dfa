@@ -191,6 +191,7 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 | `/gsd:dfa-scenarios` | Cross-subsystem scenario matrix | After 2+ DFAs exist — find interaction gaps |
 | `/gsd:dfa-audit` | Compare DFA spec vs code | After implementation — find gaps between spec and code |
 | `/gsd:dfa-tests` | Generate test skeletons | After modeling — bootstrap test coverage |
+| `/gsd:dfa-btree` | Generate hierarchical behavior tree | After 1+ DFAs exist — give developers a top-down view of system behavior |
 
 ### Typical Workflow
 
@@ -199,6 +200,7 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 /gsd:dfa-model trader      → model each subsystem
 /gsd:dfa-verify            → validate completeness
 /gsd:dfa-scenarios         → cross-subsystem gaps
+/gsd:dfa-btree             → hierarchical behavior tree (L0/L1/L2)
 /gsd:dfa-tests DFA-file    → generate test skeletons
   ... implement code ...
 /gsd:dfa-audit             → verify code matches spec
@@ -214,6 +216,7 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 | Scenario Matrix | `.planning/phases/XX-name/{N}-DFA-SCENARIOS.md` | `.planning/dfa/DFA-cross-subsystem-scenarios.md` | planner (integration tasks), verifier |
 | Audit Report | — | `.planning/dfa/DFA-AUDIT-{date}.md` | developer (fix queue) |
 | Test Skeletons | `tests/.../test_dfa_{subsystem}.py` | same | executor, tdd-guide |
+| Behavior Tree | `.planning/phases/XX-name/{N}-DFA-BTREE.md` | `.planning/dfa/DFA-BTREE.md` | developer (understanding), reviewer, onboarding |
 
 ---
 
@@ -227,6 +230,7 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 | Verification | Transition coverage = 100% |
 | Forbidden transition | Explicit error handling requirement |
 | Scenario Matrix row | Integration test case |
+| Behavior Tree | Hierarchical decision view across all DFAs |
 
 ---
 
