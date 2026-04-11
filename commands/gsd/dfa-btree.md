@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-btree
-description: Generate hierarchical behavior tree from DFA state tables. Synthesizes all DFAs into a multi-level decision tree (L0 system overview, L1 capability trees, L2 full detail) with Mermaid diagrams. Use after /gsd:dfa-model to give developers a top-down view of system behavior.
+description: Generate hierarchical behavior tree from DFA state tables. Synthesizes all DFAs into a multi-level decision tree (L0 system overview, L1 capability trees, L2 full detail) with Mermaid diagrams. Use after /gsd-dfa-model to give developers a top-down view of system behavior.
 argument-hint: "[--level 0|1|2] [--event <event-name>] [--dir <path>]"
 allowed-tools:
   - Read

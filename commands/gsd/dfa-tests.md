@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-tests
-description: Generate test skeletons from DFA transition tables. Each T-XX, F-XX, and S-XX becomes a test case with given/when/then structure. Use after /gsd:dfa-model to bootstrap test coverage.
+description: Generate test skeletons from DFA transition tables. Each T-XX, F-XX, and S-XX becomes a test case with given/when/then structure. Use after /gsd-dfa-model to bootstrap test coverage.
 argument-hint: "<dfa-file> [--lang python|typescript|go]"
 allowed-tools:
   - Read

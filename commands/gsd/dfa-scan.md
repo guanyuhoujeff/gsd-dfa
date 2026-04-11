@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-scan
-description: Scan codebase to identify subsystems suitable for DFA modeling. Detects state enums, reducers, FSM patterns, lifecycle methods, and circuit breakers. Use before /gsd:dfa-model to find candidates.
+description: Scan codebase to identify subsystems suitable for DFA modeling. Detects state enums, reducers, FSM patterns, lifecycle methods, and circuit breakers. Use before /gsd-dfa-model to find candidates.
 argument-hint: "[directory]"
 allowed-tools:
   - Read

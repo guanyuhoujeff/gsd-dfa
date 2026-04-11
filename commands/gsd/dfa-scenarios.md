@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-scenarios
-description: Generate cross-subsystem scenario matrix from multiple DFA state tables. Identifies critical state combinations, failure cascades, and event ordering sensitivities. Run after /gsd:dfa-model when 2+ interacting DFAs exist.
+description: Generate cross-subsystem scenario matrix from multiple DFA state tables. Identifies critical state combinations, failure cascades, and event ordering sensitivities. Run after /gsd-dfa-model when 2+ interacting DFAs exist.
 argument-hint: "[--phase <N>] [--dir <path>]"
 allowed-tools:
   - Read

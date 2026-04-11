@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-audit
-description: Compare DFA state table specs against actual code implementation. Identifies gaps where code behavior diverges from the DFA specification. Use after /gsd:dfa-model to find implementation gaps.
+description: Compare DFA state table specs against actual code implementation. Identifies gaps where code behavior diverges from the DFA specification. Use after /gsd-dfa-model to find implementation gaps.
 argument-hint: "[dfa-file-or-directory]"
 allowed-tools:
   - Read

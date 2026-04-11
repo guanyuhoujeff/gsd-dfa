@@ -1,6 +1,6 @@
 ---
 name: gsd:dfa-verify
-description: Verify DFA completeness and consistency. Checks for dead states, unreachable states, unhandled events, and guard exhaustiveness. Run after /gsd:dfa-model to validate before planning.
+description: Verify DFA completeness and consistency. Checks for dead states, unreachable states, unhandled events, and guard exhaustiveness. Run after /gsd-dfa-model to validate before planning.
 argument-hint: "[dfa-file-or-directory] [--phase <N>]"
 allowed-tools:
   - Read

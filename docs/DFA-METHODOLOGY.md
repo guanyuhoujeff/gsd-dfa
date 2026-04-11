@@ -80,21 +80,21 @@ DFA supports two usage modes:
 DFA modeling integrates at specific points in the existing GSD pipeline:
 
 ```
-research-phase  ──→  /gsd:dfa-scan to identify STATEFUL subsystems
+research-phase  ──→  /gsd-dfa-scan to identify STATEFUL subsystems
                      (not every phase needs DFA — CRUD doesn't)
 
-discuss-phase   ──→  /gsd:dfa-model --phase N to define states, events, guards
-                     /gsd:dfa-verify to validate completeness
-                     /gsd:dfa-scenarios for cross-subsystem gaps
+discuss-phase   ──→  /gsd-dfa-model --phase N to define states, events, guards
+                     /gsd-dfa-verify to validate completeness
+                     /gsd-dfa-scenarios for cross-subsystem gaps
 
 plan-phase      ──→  Each transition group = one plan/task
                      Planner reads DFA as specification
-                     /gsd:dfa-tests to generate test skeletons
+                     /gsd-dfa-tests to generate test skeletons
 
 execute-phase   ──→  Implement reducer/handler per transition
                      Fill in test skeletons
 
-verify-work     ──→  /gsd:dfa-audit to verify code matches spec
+verify-work     ──→  /gsd-dfa-audit to verify code matches spec
                      Check no unhandled state×event combinations
 ```
 
@@ -103,11 +103,11 @@ verify-work     ──→  /gsd:dfa-audit to verify code matches spec
 For systems already built without DFA, model retroactively to find gaps:
 
 ```
-/gsd:dfa-scan           ──→  Find which subsystems have stateful behavior
-/gsd:dfa-model {name}   ──→  Model each subsystem from existing code
-/gsd:dfa-verify         ──→  Validate the model itself
-/gsd:dfa-scenarios      ──→  Cross-subsystem interaction gaps
-/gsd:dfa-audit          ──→  Compare model vs code → gap list
+/gsd-dfa-scan           ──→  Find which subsystems have stateful behavior
+/gsd-dfa-model {name}   ──→  Model each subsystem from existing code
+/gsd-dfa-verify         ──→  Validate the model itself
+/gsd-dfa-scenarios      ──→  Cross-subsystem interaction gaps
+/gsd-dfa-audit          ──→  Compare model vs code → gap list
   ... fix gaps ...
 ```
 
@@ -185,25 +185,25 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:dfa-scan` | Scan codebase for DFA candidates | Before modeling — find which subsystems need DFA |
-| `/gsd:dfa-model` | Create DFA state table | When modeling a stateful subsystem |
-| `/gsd:dfa-verify` | Verify DFA completeness | After modeling — check for dead states, missing cells |
-| `/gsd:dfa-scenarios` | Cross-subsystem scenario matrix | After 2+ DFAs exist — find interaction gaps |
-| `/gsd:dfa-audit` | Compare DFA spec vs code | After implementation — find gaps between spec and code |
-| `/gsd:dfa-tests` | Generate test skeletons | After modeling — bootstrap test coverage |
-| `/gsd:dfa-btree` | Generate hierarchical behavior tree | After 1+ DFAs exist — give developers a top-down view of system behavior |
+| `/gsd-dfa-scan` | Scan codebase for DFA candidates | Before modeling — find which subsystems need DFA |
+| `/gsd-dfa-model` | Create DFA state table | When modeling a stateful subsystem |
+| `/gsd-dfa-verify` | Verify DFA completeness | After modeling — check for dead states, missing cells |
+| `/gsd-dfa-scenarios` | Cross-subsystem scenario matrix | After 2+ DFAs exist — find interaction gaps |
+| `/gsd-dfa-audit` | Compare DFA spec vs code | After implementation — find gaps between spec and code |
+| `/gsd-dfa-tests` | Generate test skeletons | After modeling — bootstrap test coverage |
+| `/gsd-dfa-btree` | Generate hierarchical behavior tree | After 1+ DFAs exist — give developers a top-down view of system behavior |
 
 ### Typical Workflow
 
 ```
-/gsd:dfa-scan              → identify candidates
-/gsd:dfa-model trader      → model each subsystem
-/gsd:dfa-verify            → validate completeness
-/gsd:dfa-scenarios         → cross-subsystem gaps
-/gsd:dfa-btree             → hierarchical behavior tree (L0/L1/L2)
-/gsd:dfa-tests DFA-file    → generate test skeletons
+/gsd-dfa-scan              → identify candidates
+/gsd-dfa-model trader      → model each subsystem
+/gsd-dfa-verify            → validate completeness
+/gsd-dfa-scenarios         → cross-subsystem gaps
+/gsd-dfa-btree             → hierarchical behavior tree (L0/L1/L2)
+/gsd-dfa-tests DFA-file    → generate test skeletons
   ... implement code ...
-/gsd:dfa-audit             → verify code matches spec
+/gsd-dfa-audit             → verify code matches spec
 ```
 
 ---
