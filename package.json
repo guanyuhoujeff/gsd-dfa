@@ -1,9 +1,9 @@
 {
-  "name": "get-shit-done-cc",
-  "version": "1.34.2",
-  "description": "A meta-prompting, context engineering and spec-driven development system for Claude Code, OpenCode, Gemini and Codex by TÂCHES.",
+  "name": "gsd-dfa",
+  "version": "2.0.0",
+  "description": "Spec-driven development with DFA state modeling for Claude Code and other AI coding agents. Forces completeness in stateful systems by requiring every state x event combination to be planned.",
   "bin": {
-    "get-shit-done-cc": "bin/install.js"
+    "gsd-dfa": "bin/install.js"
   },
   "files": [
     "bin",
@@ -17,23 +17,24 @@
     "claude",
     "claude-code",
     "ai",
-    "meta-prompting",
-    "context-engineering",
     "spec-driven-development",
-    "gemini",
-    "gemini-cli",
-    "codex",
-    "codex-cli"
+    "state-machine",
+    "dfa",
+    "deterministic-finite-automaton",
+    "statechart",
+    "planning",
+    "meta-prompting",
+    "context-engineering"
   ],
-  "author": "TÂCHES",
+  "author": "guanyuhoujeff",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gsd-build/get-shit-done.git"
+    "url": "git+https://github.com/guanyuhoujeff/gsd-dfa.git"
   },
-  "homepage": "https://github.com/gsd-build/get-shit-done",
+  "homepage": "https://github.com/guanyuhoujeff/gsd-dfa",
   "bugs": {
-    "url": "https://github.com/gsd-build/get-shit-done/issues"
+    "url": "https://github.com/guanyuhoujeff/gsd-dfa/issues"
   },
   "engines": {
     "node": ">=22.0.0"
