@@ -20,7 +20,12 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 // ─── Size thresholds ─────────────────────────────────────────────────────────
 
 const AGENT_FILE_SIZE_LIMIT = 100 * 1024;   // 100K — appropriate for version-controlled source
-const PLANNER_EXTRACTED_LIMIT = 45 * 1024;  // 45K — proves extraction happened
+// 47K — proves mode sections were extracted. Bumped from upstream's 45K in
+// gsd-dfa fork (divorce) to accommodate the DFA-aware planning section that
+// must remain in the planner agent. Body is extracted to
+// get-shit-done/references/dfa-aware-planning.md; only the rule + pointer
+// stays in the planner.
+const PLANNER_EXTRACTED_LIMIT = 47 * 1024;
 
 // ─── File paths ──────────────────────────────────────────────────────────────
 
