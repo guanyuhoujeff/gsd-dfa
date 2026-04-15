@@ -396,9 +396,9 @@ const banner = '\n' +
   '  ╚██████╔╝███████║██████╔╝\n' +
   '   ╚═════╝ ╚══════╝╚═════╝' + reset + '\n' +
   '\n' +
-  '  Get Shit Done ' + dim + 'v' + pkg.version + reset + '\n' +
-  '  A meta-prompting, context engineering and spec-driven\n' +
-  '  development system for Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Antigravity, Cursor, Windsurf, Augment, Trae, Qwen Code, Cline and CodeBuddy by TÂCHES.\n';
+  '  gsd-dfa ' + dim + 'v' + pkg.version + reset + '\n' +
+  '  A spec-driven development system with explicit DFA state modeling\n' +
+  '  for Claude Code, OpenCode, Gemini, Kilo, Codex, Copilot, Antigravity, Cursor, Windsurf, Augment, Trae, Qwen Code, Cline and CodeBuddy.\n';
 
 // Parse --config-dir argument
 function parseConfigDirArg() {
@@ -5894,18 +5894,18 @@ function install(isGlobal, runtime = 'claude') {
   }
 
   if (isCline) {
-    // Cline uses .clinerules — generate a rules file with GSD system instructions
+    // Cline uses .clinerules — generate a rules file with gsd-dfa system instructions
     const clinerulesDest = path.join(targetDir, '.clinerules');
     const clinerules = [
-      '# GSD — Get Shit Done',
+      '# gsd-dfa',
       '',
-      '- GSD workflows live in `get-shit-done/workflows/`. Load the relevant workflow when',
+      '- gsd-dfa workflows live in `get-shit-done/workflows/`. Load the relevant workflow when',
       '  the user runs a `/gsd-*` command.',
-      '- GSD agents live in `agents/`. Use the matching agent when spawning subagents.',
-      '- GSD tools are at `get-shit-done/bin/gsd-tools.cjs`. Run with `node`.',
-      '- Planning artifacts live in `.planning/`. Never edit them outside a GSD workflow.',
-      '- Do not apply GSD workflows unless the user explicitly asks for them.',
-      '- When a GSD command triggers a deliverable (feature, fix, docs), offer the next',
+      '- gsd-dfa agents live in `agents/`. Use the matching agent when spawning subagents.',
+      '- gsd-dfa tools are at `get-shit-done/bin/gsd-tools.cjs`. Run with `node`.',
+      '- Planning artifacts live in `.planning/`. Never edit them outside a gsd-dfa workflow.',
+      '- Do not apply gsd-dfa workflows unless the user explicitly asks for them.',
+      '- When a gsd-dfa command triggers a deliverable (feature, fix, docs), offer the next',
       '  step to the user using Cline\'s ask_user tool after completing it.',
     ].join('\n') + '\n';
     fs.writeFileSync(clinerulesDest, clinerules);

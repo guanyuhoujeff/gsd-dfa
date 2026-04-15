@@ -1,11 +1,11 @@
 <purpose>
-Display the complete GSD command reference. Output ONLY the reference content. Do NOT add project-specific analysis, git status, next-step suggestions, or any commentary beyond the reference.
+Display the complete gsd-dfa command reference. Output ONLY the reference content. Do NOT add project-specific analysis, git status, next-step suggestions, or any commentary beyond the reference.
 </purpose>
 
 <reference>
-# GSD Command Reference
+# gsd-dfa Command Reference
 
-**GSD** (Get Shit Done) creates hierarchical project plans optimized for solo agentic development with Claude Code.
+**gsd-dfa** (gsd-dfa) creates hierarchical project plans optimized for solo agentic development with Claude Code.
 
 ## Quick Start
 
@@ -15,7 +15,7 @@ Display the complete GSD command reference. Output ONLY the reference content. D
 
 ## Staying Updated
 
-GSD evolves fast. Update periodically:
+gsd-dfa evolves fast. Update periodically:
 
 ```bash
 npx gsd-dfa@latest
@@ -121,9 +121,9 @@ Usage: `/gsd-execute-phase 5 --wave 2`
 ### Smart Router
 
 **`/gsd-do <description>`**
-Route freeform text to the right GSD command automatically.
+Route freeform text to the right gsd-dfa command automatically.
 
-- Analyzes natural language input to find the best matching GSD command
+- Analyzes natural language input to find the best matching gsd-dfa command
 - Acts as a dispatcher — never does the work itself
 - Resolves ambiguity by asking you to pick between top matches
 - Use when you know what you want but don't know which `/gsd-*` command to run
@@ -135,7 +135,7 @@ Usage: `/gsd-do I want to start a new milestone`
 ### Quick Mode
 
 **`/gsd-quick [--full] [--validate] [--discuss] [--research]`**
-Execute small, ad-hoc tasks with GSD guarantees but skip optional agents.
+Execute small, ad-hoc tasks with gsd-dfa guarantees but skip optional agents.
 
 Quick mode uses the same system with a shorter path:
 - Spawns planner + executor (skips researcher, checker, verifier by default)
@@ -363,7 +363,7 @@ Create a clean branch for pull requests by filtering out .planning/ commits.
 
 - Classifies commits: code-only (include), planning-only (exclude), mixed (include sans .planning/)
 - Cherry-picks code commits onto a clean branch
-- Reviewers see only code changes, no GSD artifacts
+- Reviewers see only code changes, no gsd-dfa artifacts
 
 Usage: `/gsd-pr-branch` or `/gsd-pr-branch main`
 
@@ -423,7 +423,7 @@ Configure workflow toggles and model profile interactively.
 Usage: `/gsd-settings`
 
 **`/gsd-set-profile <profile>`**
-Quick switch model profile for GSD agents.
+Quick switch model profile for gsd-dfa agents.
 
 - `quality` — Opus everywhere except verification
 - `balanced` — Opus for planning, Sonnet for execution (default)
@@ -448,7 +448,7 @@ Usage: `/gsd-cleanup`
 Show this command reference.
 
 **`/gsd-update`**
-Update GSD to latest version with changelog preview.
+Update gsd-dfa to latest version with changelog preview.
 
 - Shows installed vs latest version comparison
 - Displays changelog entries for versions you've missed
@@ -459,10 +459,10 @@ Update GSD to latest version with changelog preview.
 Usage: `/gsd-update`
 
 **`/gsd-join-discord`**
-Join the GSD Discord community.
+Join the gsd-dfa Discord community.
 
 - Get help, share what you're building, stay updated
-- Connect with other GSD users
+- Connect with other gsd-dfa users
 
 Usage: `/gsd-join-discord`
 
