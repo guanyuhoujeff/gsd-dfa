@@ -1,4 +1,4 @@
-# GSD CLI Tools Reference
+# gsd-dfa CLI Tools Reference
 
 > Programmatic API reference for `gsd-tools.cjs`. Used by workflows and agents internally. For user-facing commands, see [Command Reference](COMMANDS.md).
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-`gsd-tools.cjs` is a Node.js CLI utility that replaces repetitive inline bash patterns across GSD's ~50 command, workflow, and agent files. It centralizes: config parsing, model resolution, phase lookup, git commits, summary verification, state management, and template operations.
+`gsd-tools.cjs` is a Node.js CLI utility that replaces repetitive inline bash patterns across gsd-dfa's ~50 command, workflow, and agent files. It centralizes: config parsing, model resolution, phase lookup, git commits, summary verification, state management, and template operations.
 
 **Location:** `get-shit-done/bin/gsd-tools.cjs`
 **Modules:** 15 domain modules in `get-shit-done/bin/lib/`

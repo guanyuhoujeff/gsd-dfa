@@ -54,13 +54,13 @@ The bridge file is a simple JSON object:
 }
 ```
 
-## Integration with GSD
+## Integration with gsd-dfa
 
-GSD's `/gsd-pause-work` command saves execution state. The WARNING message suggests using it. The CRITICAL message instructs immediate state save.
+gsd-dfa's `/gsd-pause-work` command saves execution state. The WARNING message suggests using it. The CRITICAL message instructs immediate state save.
 
 ## Setup
 
-Both hooks are automatically registered during `npx get-shit-done-cc` installation:
+Both hooks are automatically registered during `npx gsd-dfa` installation:
 
 - **Statusline** (writes bridge file): Registered as `statusLine` in settings.json
 - **Context Monitor** (reads bridge file): Registered as `PostToolUse` hook in settings.json (`AfterTool` for Gemini)

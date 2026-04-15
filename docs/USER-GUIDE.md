@@ -1,4 +1,4 @@
-# GSD User Guide
+# gsd-dfa User Guide
 
 A detailed reference for workflows, troubleshooting, and configuration. For quick-start setup, see the [README](../README.md).
 
@@ -111,7 +111,7 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
 
 ### Validation Architecture (Nyquist Layer)
 
-During plan-phase research, GSD now maps automated test coverage to each phase
+During plan-phase research, gsd-dfa now maps automated test coverage to each phase
 requirement before any code is written. This ensures that when Claude's executor
 commits a task, a feedback mechanism already exists to verify it within seconds.
 
@@ -160,7 +160,7 @@ enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 
 ### Assumptions Discussion Mode
 
-By default, `/gsd-discuss-phase` asks open-ended questions about your implementation preferences. Assumptions mode inverts this: GSD reads your codebase first, surfaces structured assumptions about how it would build the phase, and asks only for corrections.
+By default, `/gsd-discuss-phase` asks open-ended questions about your implementation preferences. Assumptions mode inverts this: gsd-dfa reads your codebase first, surfaces structured assumptions about how it would build the phase, and asks only for corrections.
 
 **Enable:** Set `workflow.discuss_mode` to `'assumptions'` via `/gsd-settings`.
 
@@ -176,6 +176,60 @@ By default, `/gsd-discuss-phase` asks open-ended questions about your implementa
 - Projects where patterns are well-established and predictable
 
 See [docs/workflow-discuss-mode.md](workflow-discuss-mode.md) for the full discuss-mode reference.
+
+---
+
+## DFA Workflow (stateful subsystems)
+
+gsd-dfa's core differentiator. When a phase touches a subsystem with 3+ states whose behavior depends on current state — connection lifecycle, auth/session flow, order state machine, retry + circuit breaker — model it as a DFA before planning.
+
+### When to use
+
+Use DFA when the phase description contains words like: *lifecycle, flow, reconnection, retry, session, state machine, circuit breaker, saga, pending/filled/cancelled, pre-market/trading/closed*.
+
+Skip DFA for: CRUD operations, stateless transformations, UI layout, configuration/dependency work.
+
+### Two usage modes
+
+**Mode 1 — Phase-bound** (new feature development):
+
+```
+/gsd-research-phase     → phase-researcher flags DFA candidates
+/gsd-discuss-phase      → user confirms which subsystems warrant DFA
+/gsd-dfa-model <name>   → state table (one per subsystem)
+/gsd-dfa-verify         → validate completeness (no empty cells)
+/gsd-dfa-scenarios      → cross-subsystem interaction matrix (if 2+ DFAs)
+/gsd-dfa-btree          → hierarchical behavior tree (L0 surfaces boundary bugs)
+/gsd-dfa-tests          → generate test skeletons
+/gsd-plan-phase         → planner decomposes by transition, not by feature
+/gsd-execute-phase      → implement each transition
+/gsd-verify-work        → Step 5b gates on transition coverage
+/gsd-dfa-audit          → spec-vs-code gap report
+```
+
+**Mode 2 — Standalone audit** (retroactive analysis of existing code):
+
+```
+/gsd-dfa-scan           → find stateful subsystems in the codebase
+/gsd-dfa-model trader   → model each subsystem from existing code
+/gsd-dfa-verify         → validate the model itself
+/gsd-dfa-scenarios      → cross-subsystem gaps
+/gsd-dfa-audit          → compare model vs code → fix queue
+```
+
+Standalone artifacts live in `.planning/dfa/` instead of a phase directory.
+
+### What each step catches
+
+| Step | Catches |
+|------|---------|
+| `/gsd-dfa-model` | Dead states, per-subsystem gaps, guard exhaustiveness |
+| `/gsd-dfa-btree --level 0` | Boundary violations (Action calls another DFA but doesn't declare Produces), umbrella events without routers, black-box externals |
+| `/gsd-dfa-btree --level 1` | Cross-subsystem state invariants ("X can only fire when Y is in state Z" — nobody wrote that down) |
+| `/gsd-dfa-verify` | "Impossible" cells that are really implicit preconditions; missing ignored-table entries |
+| Manual liveness review | Silence timeouts, retry loops, operator-intervention gaps (DFA catches safety, not liveness) |
+
+For the full methodology see [DFA Methodology](DFA-METHODOLOGY.md). For a concrete end-to-end walkthrough see the [Kiosk Worked Example](examples/dfa-kiosk-worked-example.md).
 
 ---
 
@@ -213,7 +267,7 @@ AI-generated frontends are visually inconsistent not because Claude Code is bad 
 
 **When to run:** After `/gsd-execute-phase` or `/gsd-verify-work` — for any project with frontend code.
 
-**Standalone:** Works on any project, not just GSD-managed ones. If no UI-SPEC.md exists, audits against abstract 6-pillar standards.
+**Standalone:** Works on any project, not just gsd-dfa-managed ones. If no UI-SPEC.md exists, audits against abstract 6-pillar standards.
 
 **6 Pillars (scored 1-4 each):**
 1. Copywriting — CTA labels, empty states, error states
@@ -243,7 +297,7 @@ For React/Next.js/Vite projects, the UI researcher offers to initialize shadcn i
 3. Run `npx shadcn init --preset {paste}`
 4. Preset encodes the entire design system — colors, border radius, fonts
 
-The preset string becomes a first-class GSD planning artifact, reproducible across phases and milestones.
+The preset string becomes a first-class gsd-dfa planning artifact, reproducible across phases and milestones.
 
 ### Registry Safety Gate
 
@@ -321,7 +375,7 @@ Workstreams let you work on multiple milestone areas concurrently without state 
 
 ### How It Works
 
-Each workstream maintains its own `.planning/` directory subtree. When you switch workstreams, GSD swaps the active planning context so that `/gsd-progress`, `/gsd-discuss-phase`, `/gsd-plan-phase`, and other commands operate on that workstream's state. Active context is session-scoped when the runtime exposes a stable session identifier, which prevents one terminal or AI instance from repointing another instance's `STATE.md`.
+Each workstream maintains its own `.planning/` directory subtree. When you switch workstreams, gsd-dfa swaps the active planning context so that `/gsd-progress`, `/gsd-discuss-phase`, `/gsd-plan-phase`, and other commands operate on that workstream's state. Active context is session-scoped when the runtime exposes a stable session identifier, which prevents one terminal or AI instance from repointing another instance's `STATE.md`.
 
 This is lighter weight than `/gsd-new-workspace` (which creates separate repo worktrees). Workstreams share the same codebase and git history but isolate planning artifacts.
 
@@ -331,7 +385,7 @@ This is lighter weight than `/gsd-new-workspace` (which creates separate repo wo
 
 ### Defense-in-Depth (v1.27)
 
-GSD generates markdown files that become LLM system prompts. This means any user-controlled text flowing into planning artifacts is a potential indirect prompt injection vector. v1.27 introduced centralized security hardening:
+gsd-dfa generates markdown files that become LLM system prompts. This means any user-controlled text flowing into planning artifacts is a potential indirect prompt injection vector. v1.27 introduced centralized security hardening:
 
 **Path Traversal Prevention:**
 All user-supplied file paths (`--text-file`, `--prd`) are validated to resolve within the project directory. macOS `/var` → `/private/var` symlink resolution is handled.
@@ -341,7 +395,7 @@ The `security.cjs` module scans for known injection patterns (role overrides, in
 
 **Runtime Hooks:**
 - `gsd-prompt-guard.js` — Scans Write/Edit calls to `.planning/` for injection patterns (always active, advisory-only)
-- `gsd-workflow-guard.js` — Warns on file edits outside GSD workflow context (opt-in via `hooks.workflow_guard`)
+- `gsd-workflow-guard.js` — Warns on file edits outside gsd-dfa workflow context (opt-in via `hooks.workflow_guard`)
 
 **CI Scanner:**
 `prompt-injection-scan.test.cjs` scans all agent, workflow, and command files for embedded injection vectors. Run as part of the test suite.
@@ -435,7 +489,7 @@ Before committing to a new phase or plan, use `/gsd-explore` to think through th
 /gsd-explore "caching strategy"        # Explore a specific topic
 ```
 
-The exploration session guides you through probing questions, optionally spawns a research agent, and routes output to the appropriate GSD artifact: note, todo, seed, research question, requirements update, or new phase.
+The exploration session guides you through probing questions, optionally spawns a research agent, and routes output to the appropriate gsd-dfa artifact: note, todo, seed, research question, requirements update, or new phase.
 
 ### Codebase Intelligence
 
@@ -498,7 +552,7 @@ For a focused assessment without full `/gsd-map-codebase` overhead:
 | `/gsd-pause-work` | Save structured handoff (HANDOFF.json + continue-here.md) | Stopping mid-phase |
 | `/gsd-session-report` | Generate session summary with work and outcomes | End of session, stakeholder sharing |
 | `/gsd-help` | Show all commands | Quick reference |
-| `/gsd-update` | Update GSD with changelog preview | Check for new versions |
+| `/gsd-update` | Update gsd-dfa with changelog preview | Check for new versions |
 | `/gsd-join-discord` | Open Discord community invite | Questions or community |
 
 ### Phase Management
@@ -521,7 +575,7 @@ For a focused assessment without full `/gsd-map-codebase` overhead:
 | `/gsd-scan [--focus area]` | Rapid single-focus codebase scan (1 agent) | Quick assessment of a specific area |
 | `/gsd-intel [query\|status\|diff\|refresh]` | Query codebase intelligence index | Look up APIs, deps, or architecture decisions |
 | `/gsd-explore [topic]` | Socratic ideation — think through an idea before committing | Exploring unfamiliar solution space |
-| `/gsd-quick` | Ad-hoc task with GSD guarantees | Bug fixes, small features, config changes |
+| `/gsd-quick` | Ad-hoc task with gsd-dfa guarantees | Bug fixes, small features, config changes |
 | `/gsd-autonomous` | Run remaining phases autonomously (`--from N`, `--to N`) | Hands-free multi-phase execution |
 | `/gsd-undo --last N\|--phase NN\|--plan NN-MM` | Safe git revert using phase manifest | Roll back a bad execution |
 | `/gsd-import --from <file>` | Ingest external plan with conflict detection | Import plans from teammates or other tools |
@@ -557,7 +611,7 @@ For a focused assessment without full `/gsd-map-codebase` overhead:
 
 ## Configuration Reference
 
-GSD stores project settings in `.planning/config.json`. Configure during `/gsd-new-project` or update later with `/gsd-settings`.
+gsd-dfa stores project settings in `.planning/config.json`. Configure during `/gsd-new-project` or update later with `/gsd-settings`.
 
 ### Full config.json Schema
 
@@ -632,7 +686,7 @@ GSD stores project settings in `.planning/config.json`. Configure during `/gsd-n
 | Setting | Options | Default | What it Controls |
 |---------|---------|---------|------------------|
 | `hooks.context_warnings` | `true`, `false` | `true` | Context window usage warnings |
-| `hooks.workflow_guard` | `true`, `false` | `false` | Warn on file edits outside GSD workflow context |
+| `hooks.workflow_guard` | `true`, `false` | `false` | Warn on file edits outside gsd-dfa workflow context |
 
 Disable workflow toggles to speed up phases in familiar domains or when conserving tokens.
 
@@ -771,7 +825,7 @@ claude --dangerously-skip-permissions
 
 ### Multi-Project Workspaces
 
-Work on multiple repos or features in parallel with isolated GSD state.
+Work on multiple repos or features in parallel with isolated gsd-dfa state.
 
 ```bash
 # Create a workspace with repos from your monorepo
@@ -780,7 +834,7 @@ Work on multiple repos or features in parallel with isolated GSD state.
 # Feature branch isolation — worktree of current repo with its own .planning/
 /gsd-new-workspace --name feature-b --repos .
 
-# Then cd into the workspace and initialize GSD
+# Then cd into the workspace and initialize gsd-dfa
 cd ~/gsd-workspaces/feature-b
 /gsd-new-project
 
@@ -825,7 +879,7 @@ You ran `/gsd-new-project` but `.planning/PROJECT.md` already exists. This is a 
 
 ### Context Degradation During Long Sessions
 
-Clear your context window between major commands: `/clear` in Claude Code. GSD is designed around fresh contexts -- every subagent gets a clean 200K window. If quality is dropping in the main session, clear and use `/gsd-resume-work` or `/gsd-progress` to restore state.
+Clear your context window between major commands: `/clear` in Claude Code. gsd-dfa is designed around fresh contexts -- every subagent gets a clean 200K window. If quality is dropping in the main session, clear and use `/gsd-resume-work` or `/gsd-progress` to restore state.
 
 ### Plans Seem Wrong or Misaligned
 
@@ -849,7 +903,7 @@ Switch to budget profile: `/gsd-set-profile budget`. Disable research and plan-c
 
 ### Using Non-Claude Runtimes (Codex, OpenCode, Gemini CLI, Kilo)
 
-If you installed GSD for a non-Claude runtime, the installer already configured model resolution so all agents use the runtime's default model. No manual setup is needed. Specifically, the installer sets `resolve_model_ids: "omit"` in your config, which tells GSD to skip Anthropic model ID resolution and let the runtime choose its own default model.
+If you installed gsd-dfa for a non-Claude runtime, the installer already configured model resolution so all agents use the runtime's default model. No manual setup is needed. Specifically, the installer sets `resolve_model_ids: "omit"` in your config, which tells gsd-dfa to skip Anthropic model ID resolution and let the runtime choose its own default model.
 
 To assign different models to different agents on a non-Claude runtime, add `model_overrides` to `.planning/config.json` with fully-qualified model IDs that your runtime recognizes:
 
@@ -870,24 +924,24 @@ See the [Configuration Reference](CONFIGURATION.md#non-claude-runtimes-codex-ope
 
 ### Installing for Cline
 
-Cline uses a rules-based integration — GSD installs as `.clinerules` rather than slash commands.
+Cline uses a rules-based integration — gsd-dfa installs as `.clinerules` rather than slash commands.
 
 ```bash
 # Global install (applies to all projects)
-npx get-shit-done-cc --cline --global
+npx gsd-dfa --cline --global
 
 # Local install (this project only)
-npx get-shit-done-cc --cline --local
+npx gsd-dfa --cline --local
 ```
 
-Global installs write to `~/.cline/`. Local installs write to `./.cline/`. No custom slash commands are registered — GSD rules are loaded automatically by Cline from the rules file.
+Global installs write to `~/.cline/`. Local installs write to `./.cline/`. No custom slash commands are registered — gsd-dfa rules are loaded automatically by Cline from the rules file.
 
 ### Installing for CodeBuddy
 
 CodeBuddy uses a skills-based integration.
 
 ```bash
-npx get-shit-done-cc --codebuddy --global
+npx gsd-dfa --codebuddy --global
 ```
 
 Skills are installed to `~/.codebuddy/skills/gsd-*/SKILL.md`.
@@ -897,26 +951,26 @@ Skills are installed to `~/.codebuddy/skills/gsd-*/SKILL.md`.
 Qwen Code uses the same open skills standard as Claude Code 2.1.88+.
 
 ```bash
-npx get-shit-done-cc --qwen --global
+npx gsd-dfa --qwen --global
 ```
 
 Skills are installed to `~/.qwen/skills/gsd-*/SKILL.md`. Use the `QWEN_CONFIG_DIR` environment variable to override the default install path.
 
 ### Using Claude Code with Non-Anthropic Providers (OpenRouter, Local)
 
-If GSD subagents call Anthropic models and you're paying through OpenRouter or a local provider, switch to the `inherit` profile: `/gsd-set-profile inherit`. This makes all agents use your current session model instead of specific Anthropic models. See also `/gsd-settings` → Model Profile → Inherit.
+If gsd-dfa subagents call Anthropic models and you're paying through OpenRouter or a local provider, switch to the `inherit` profile: `/gsd-set-profile inherit`. This makes all agents use your current session model instead of specific Anthropic models. See also `/gsd-settings` → Model Profile → Inherit.
 
 ### Working on a Sensitive/Private Project
 
 Set `commit_docs: false` during `/gsd-new-project` or via `/gsd-settings`. Add `.planning/` to your `.gitignore`. Planning artifacts stay local and never touch git.
 
-### GSD Update Overwrote My Local Changes
+### gsd-dfa Update Overwrote My Local Changes
 
 Since v1.17, the installer backs up locally modified files to `gsd-local-patches/`. Run `/gsd-reapply-patches` to merge your changes back.
 
 ### Cannot Update via npm
 
-If `npx get-shit-done-cc` fails due to npm outages or network restrictions, see [docs/manual-update.md](manual-update.md) for a step-by-step manual update procedure that works without npm access.
+If `npx gsd-dfa` fails due to npm outages or network restrictions, see [docs/manual-update.md](manual-update.md) for a step-by-step manual update procedure that works without npm access.
 
 ### Workflow Diagnostics (`/gsd-forensics`)
 
@@ -931,11 +985,11 @@ When a workflow fails in a way that isn't obvious -- plans reference nonexistent
 
 ### Subagent Appears to Fail but Work Was Done
 
-A known workaround exists for a Claude Code classification bug. GSD's orchestrators (execute-phase, quick) spot-check actual output before reporting failure. If you see a failure message but commits were made, check `git log` -- the work may have succeeded.
+A known workaround exists for a Claude Code classification bug. gsd-dfa's orchestrators (execute-phase, quick) spot-check actual output before reporting failure. If you see a failure message but commits were made, check `git log` -- the work may have succeeded.
 
 ### Parallel Execution Causes Build Lock Errors
 
-If you see pre-commit hook failures, cargo lock contention, or 30+ minute execution times during parallel wave execution, this is caused by multiple agents triggering build tools simultaneously. GSD handles this automatically since v1.26 — parallel agents use `--no-verify` on commits and the orchestrator runs hooks once after each wave. If you're on an older version, add this to your project's `CLAUDE.md`:
+If you see pre-commit hook failures, cargo lock contention, or 30+ minute execution times during parallel wave execution, this is caused by multiple agents triggering build tools simultaneously. gsd-dfa handles this automatically since v1.26 — parallel agents use `--no-verify` on commits and the orchestrator runs hooks once after each wave. If you're on an older version, add this to your project's `CLAUDE.md`:
 
 ```markdown
 ## Git Commit Rules for Agents
@@ -967,13 +1021,13 @@ If the installer crashes with `EPERM: operation not permitted, scandir` on Windo
 | Update broke local changes | `/gsd-reapply-patches` |
 | Want session summary for stakeholder | `/gsd-session-report` |
 | Don't know what step is next | `/gsd-next` |
-| Parallel execution build errors | Update GSD or set `parallelization.enabled: false` |
+| Parallel execution build errors | Update gsd-dfa or set `parallelization.enabled: false` |
 
 ---
 
 ## Project File Structure
 
-For reference, here is what GSD creates in your project:
+For reference, here is what gsd-dfa creates in your project:
 
 ```
 .planning/

@@ -1,6 +1,6 @@
 # Discuss Mode: Assumptions vs Interview
 
-GSD's discuss-phase has two modes for gathering implementation context before planning.
+gsd-dfa's discuss-phase has two modes for gathering implementation context before planning.
 
 ## Modes
 

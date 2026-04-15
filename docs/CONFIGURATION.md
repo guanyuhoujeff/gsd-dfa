@@ -1,4 +1,4 @@
-# GSD Configuration Reference
+# gsd-dfa Configuration Reference
 
 > Full configuration schema, workflow toggles, model profiles, and git branching options. For feature context, see [Feature Reference](FEATURES.md).
 
@@ -6,7 +6,7 @@
 
 ## Configuration File
 
-GSD stores project settings in `.planning/config.json`. Created during `/gsd-new-project`, updated via `/gsd-settings`.
+gsd-dfa stores project settings in `.planning/config.json`. Created during `/gsd-new-project`, updated via `/gsd-settings`.
 
 ### Full Schema
 
@@ -158,7 +158,7 @@ If `.planning/` is in `.gitignore`, `commit_docs` is automatically `false` regar
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hooks.context_warnings` | boolean | `true` | Show context window usage warnings via context monitor hook |
-| `hooks.workflow_guard` | boolean | `false` | Warn when file edits happen outside GSD workflow context (advises using `/gsd-quick` or `/gsd-fast`) |
+| `hooks.workflow_guard` | boolean | `false` | Warn when file edits happen outside gsd-dfa workflow context (advises using `/gsd-quick` or `/gsd-fast`) |
 
 The prompt injection guard hook (`gsd-prompt-guard.js`) is always active and cannot be disabled — it's a security feature, not a workflow toggle.
 
@@ -174,7 +174,7 @@ To keep planning artifacts out of git:
 
 ## Agent Skills Injection
 
-Inject custom skill files into GSD subagent prompts. Skills are read by agents at spawn time, giving them project-specific instructions beyond what CLAUDE.md provides.
+Inject custom skill files into gsd-dfa subagent prompts. Skills are read by agents at spawn time, giving them project-specific instructions beyond what CLAUDE.md provides.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -198,7 +198,7 @@ Each path must be a directory containing a `SKILL.md` file. Paths are validated 
 
 ### Supported Agent Types
 
-Any GSD agent type can receive skills. Common types:
+Any gsd-dfa agent type can receive skills. Common types:
 
 - `gsd-executor` -- executes implementation plans
 - `gsd-planner` -- creates phase plans
@@ -414,7 +414,7 @@ Configure per-step flags that `/gsd-manager` appends to each dispatched command.
 }
 ```
 
-Invalid flag tokens are sanitized and logged as warnings. Only recognized GSD flags are passed through.
+Invalid flag tokens are sanitized and logged as warnings. Only recognized gsd-dfa flags are passed through.
 
 ---
 
@@ -455,7 +455,7 @@ Valid override values: `opus`, `sonnet`, `haiku`, `inherit`, or any fully-qualif
 
 ### Non-Claude Runtimes (Codex, OpenCode, Gemini CLI, Kilo)
 
-When GSD is installed for a non-Claude runtime, the installer automatically sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This causes GSD to return an empty model parameter for all agents, so each agent uses whatever model the runtime is configured with. No additional setup is needed for the default case.
+When gsd-dfa is installed for a non-Claude runtime, the installer automatically sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This causes gsd-dfa to return an empty model parameter for all agents, so each agent uses whatever model the runtime is configured with. No additional setup is needed for the default case.
 
 If you want different agents to use different models, use `model_overrides` with fully-qualified model IDs that your runtime recognizes:
 

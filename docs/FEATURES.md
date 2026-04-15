@@ -1,4 +1,4 @@
-# GSD Feature Reference
+# gsd-dfa Feature Reference
 
 > Complete feature and function documentation with requirements. For architecture details, see [Architecture](ARCHITECTURE.md). For command syntax, see [Command Reference](COMMANDS.md).
 
@@ -74,7 +74,7 @@
   - [Windsurf Runtime Support](#56-windsurf-runtime-support)
   - [Internationalized Documentation](#57-internationalized-documentation)
 - [v1.30 Features](#v130-features)
-  - [GSD SDK](#58-gsd-sdk)
+  - [gsd-dfa SDK](#58-gsd-sdk)
 - [v1.31 Features](#v131-features)
   - [Schema Drift Detection](#59-schema-drift-detection)
   - [Security Enforcement](#60-security-enforcement)
@@ -104,7 +104,7 @@
   - [Post-Merge Hunk Verification](#103-post-merge-hunk-verification)
 - [v1.35.0 Features](#v1350-features)
   - [New Runtime Support (Cline, CodeBuddy, Qwen Code)](#104-new-runtime-support-cline-codebuddy-qwen-code)
-  - [GSD-2 Reverse Migration](#105-gsd-2-reverse-migration)
+  - [gsd-dfa-2 Reverse Migration](#105-gsd-2-reverse-migration)
   - [AI Integration Phase Wizard](#106-ai-integration-phase-wizard)
   - [AI Eval Review](#107-ai-eval-review)
 - [v1.32 Features](#v132-features)
@@ -132,6 +132,38 @@
 ---
 
 ## Core Features
+
+### 0. DFA State Modeling (core differentiator)
+
+**Commands:** `/gsd-dfa-scan`, `/gsd-dfa-model`, `/gsd-dfa-verify`, `/gsd-dfa-scenarios`, `/gsd-dfa-btree`, `/gsd-dfa-tests`, `/gsd-dfa-audit`
+
+**Purpose:** Force completeness on stateful subsystems. Every `(state, event)` cell must be explicitly handled — as a transition, self-loop, forbidden, or ignored — before implementation begins. Natural-language plans leave combinations unspecified; those unanswered cells become production bugs.
+
+**Requirements:**
+- REQ-DFA-01: System MUST support identifying DFA candidates via `/gsd-dfa-scan` — subsystems with 3+ observable states whose behavior depends on current state
+- REQ-DFA-02: Each DFA MUST enumerate states, events, transitions, guards, actions, forbidden cells, and ignored cells with no empty `(state, event)` combinations
+- REQ-DFA-03: System MUST validate DFA completeness via `/gsd-dfa-verify` before consumption by planner
+- REQ-DFA-04: System MUST support cross-subsystem scenario modeling via `/gsd-dfa-scenarios` for interaction gaps invisible to single-subsystem analysis
+- REQ-DFA-05: System MUST support hierarchical behavior trees (L0 system overview, L1 per-entry-point, L2 per-transition) via `/gsd-dfa-btree`
+- REQ-DFA-06: `gsd-planner` MUST consume `{N}-DFA-*.md` artifacts when present and decompose plans by transition rather than by feature
+- REQ-DFA-07: `gsd-verifier` Step 5b MUST flag uncovered transitions as gaps distinct from uncovered features
+- REQ-DFA-08: `gsd-phase-researcher` MUST identify DFA candidates as part of RESEARCH.md output
+- REQ-DFA-09: System MUST support both phase-bound DFAs (`.planning/phases/XX/`) and standalone audit DFAs (`.planning/dfa/`)
+- REQ-DFA-10: `/gsd-dfa-audit` MUST produce a gap list comparing DFA spec against implemented code
+
+**Produces:**
+| Artifact | Description |
+|----------|-------------|
+| `{N}-DFA-{subsystem}.md` or `DFA-{subsystem}.md` | State table: states, events, transitions, guards, forbidden, ignored |
+| `{N}-DFA-SCENARIOS.md` or `DFA-cross-subsystem-scenarios.md` | Multi-DFA interaction matrix |
+| `{N}-DFA-BTREE.md` or `DFA-BTREE.md` | Hierarchical behavior tree (L0/L1/L2) |
+| `DFA-AUDIT-{date}.md` | Spec-vs-code gap report (standalone mode) |
+| `tests/.../test_dfa_{subsystem}.*` | Generated test skeletons (one per transition) |
+
+**When to use:** Stateful subsystems with 3+ states (connection lifecycles, auth/session flows, order/payment state, retry + circuit-breaker logic, state machines).
+**When to skip:** Pure CRUD, stateless transformations, UI layout, configuration.
+
+See [DFA Methodology](DFA-METHODOLOGY.md) and the [Kiosk Worked Example](examples/dfa-kiosk-worked-example.md) for full details.
 
 ### 1. Project Initialization
 
@@ -435,7 +467,7 @@
 
 **Command:** `/gsd-quick [--full] [--discuss] [--research]`
 
-**Purpose:** Ad-hoc task execution with GSD guarantees but a faster path.
+**Purpose:** Ad-hoc task execution with gsd-dfa guarantees but a faster path.
 
 **Requirements:**
 - REQ-QUICK-01: System MUST accept freeform task description
@@ -469,11 +501,11 @@
 
 **Command:** `/gsd-do`
 
-**Purpose:** Analyze freeform text and route to the appropriate GSD command.
+**Purpose:** Analyze freeform text and route to the appropriate gsd-dfa command.
 
 **Requirements:**
 - REQ-DO-01: System MUST parse user intent from natural language input
-- REQ-DO-02: System MUST map intent to the best matching GSD command
+- REQ-DO-02: System MUST map intent to the best matching gsd-dfa command
 - REQ-DO-03: System MUST confirm the routing with the user before executing
 - REQ-DO-04: System MUST handle project-exists vs no-project contexts differently
 
@@ -637,7 +669,7 @@
 - REQ-CTX-03: Context monitor MUST inject agent-facing warnings at ≤25% remaining (CRITICAL)
 - REQ-CTX-04: Warnings MUST debounce (5 tool uses between repeated warnings)
 - REQ-CTX-05: Severity escalation (WARNING→CRITICAL) MUST bypass debounce
-- REQ-CTX-06: Context monitor MUST differentiate GSD-active vs non-GSD-active projects
+- REQ-CTX-06: Context monitor MUST differentiate gsd-dfa-active vs non-gsd-dfa-active projects
 - REQ-CTX-07: Warnings MUST be advisory, never imperative commands that override user preferences
 - REQ-CTX-08: All hooks MUST fail silently and never block tool execution
 
@@ -743,7 +775,7 @@
 
 **Command:** `/gsd-map-codebase [area]`
 
-**Purpose:** Analyze an existing codebase before starting a new project, so GSD understands what exists.
+**Purpose:** Analyze an existing codebase before starting a new project, so gsd-dfa understands what exists.
 
 **Requirements:**
 - REQ-MAP-01: System MUST spawn parallel mapper agents for each analysis area
@@ -817,7 +849,7 @@
 
 **Command:** `/gsd-update`
 
-**Purpose:** Update GSD to the latest version with changelog preview.
+**Purpose:** Update gsd-dfa to the latest version with changelog preview.
 
 **Requirements:**
 - REQ-UPDATE-01: System MUST check for new versions via npm
@@ -919,14 +951,14 @@ fix(03-01): correct auth token expiry
 
 ### 36. Multi-Runtime Support
 
-**Purpose:** Run GSD across multiple AI coding agent runtimes.
+**Purpose:** Run gsd-dfa across multiple AI coding agent runtimes.
 
 **Requirements:**
 - REQ-RUNTIME-01: System MUST support Claude Code, OpenCode, Gemini CLI, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code, CodeBuddy, Qwen Code
 - REQ-RUNTIME-02: Installer MUST transform content per runtime (tool names, paths, frontmatter)
 - REQ-RUNTIME-03: Installer MUST support interactive and non-interactive (`--claude --global`) modes
 - REQ-RUNTIME-04: Installer MUST support both global and local installation
-- REQ-RUNTIME-05: Uninstall MUST cleanly remove all GSD files without affecting other configurations
+- REQ-RUNTIME-05: Uninstall MUST cleanly remove all gsd-dfa files without affecting other configurations
 - REQ-RUNTIME-06: Installer MUST handle platform differences (Windows, macOS, Linux, WSL, Docker)
 
 **Runtime Transformations:**
@@ -1131,7 +1163,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 **Command:** `/gsd-pr-branch [target branch]`
 
-**Purpose:** Create a clean branch suitable for pull requests by filtering out `.planning/` commits. Reviewers see only code changes, not GSD planning artifacts.
+**Purpose:** Create a clean branch suitable for pull requests by filtering out `.planning/` commits. Reviewers see only code changes, not gsd-dfa planning artifacts.
 
 **Requirements:**
 - REQ-PRBRANCH-01: System MUST identify commits that only modify `.planning/` files
@@ -1142,7 +1174,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 46. Security Hardening
 
-**Purpose:** Defense-in-depth security for GSD's planning artifacts. Because GSD generates markdown files that become LLM system prompts, user-controlled text flowing into these files is a potential indirect prompt injection vector.
+**Purpose:** Defense-in-depth security for gsd-dfa's planning artifacts. Because gsd-dfa generates markdown files that become LLM system prompts, user-controlled text flowing into these files is a potential indirect prompt injection vector.
 
 **Components:**
 
@@ -1157,7 +1189,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 PreToolUse hook that scans Write/Edit calls targeting `.planning/` for injection patterns. Advisory-only — logs detection for awareness without blocking legitimate operations.
 
 **3. Workflow Guard Hook** (`gsd-workflow-guard.js`)
-PreToolUse hook that detects when Claude attempts file edits outside a GSD workflow context. Advises using `/gsd-quick` or `/gsd-fast` instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
+PreToolUse hook that detects when Claude attempts file edits outside a gsd-dfa workflow context. Advises using `/gsd-quick` or `/gsd-fast` instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
 
 **4. CI-Ready Injection Scanner** (`prompt-injection-scan.test.cjs`)
 Test suite that scans all agent, workflow, and command files for embedded injection vectors.
@@ -1199,7 +1231,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Command:** `/gsd-forensics [description]`
 
-**Purpose:** Post-mortem investigation of failed or stuck GSD workflows.
+**Purpose:** Post-mortem investigation of failed or stuck gsd-dfa workflows.
 
 **Requirements:**
 - REQ-FORENSICS-01: System MUST analyze git history for anomalies (stuck loops, long gaps, repeated commits)
@@ -1262,7 +1294,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Process:**
 1. **Create** — Initialize a named workstream with isolated `.planning/workstreams/{name}/` directory
-2. **Switch** — Change active workstream context for subsequent GSD commands
+2. **Switch** — Change active workstream context for subsequent gsd-dfa commands
 3. **Manage** — List, check status, track progress, complete, or resume workstreams
 
 ---
@@ -1334,7 +1366,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 55. Multi-Runtime Installer Selection
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx gsd-dfa`
 
 **Purpose:** Select multiple runtimes in a single interactive install session.
 
@@ -1345,7 +1377,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 **Process:**
 1. **Detect** — Identify available AI CLI runtimes on the system
 2. **Prompt** — Present multi-select interface for runtime selection
-3. **Install** — Configure GSD for all selected runtimes in a single session
+3. **Install** — Configure gsd-dfa for all selected runtimes in a single session
 
 ---
 
@@ -1353,17 +1385,17 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 56. Windsurf Runtime Support
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx gsd-dfa`
 
-**Purpose:** Add Windsurf as a supported AI CLI runtime for GSD installation and execution.
+**Purpose:** Add Windsurf as a supported AI CLI runtime for gsd-dfa installation and execution.
 
 **Requirements:**
 - REQ-WINDSURF-01: Installer MUST detect Windsurf runtime and offer it as a target
-- REQ-WINDSURF-02: GSD commands MUST function correctly within Windsurf sessions
+- REQ-WINDSURF-02: gsd-dfa commands MUST function correctly within Windsurf sessions
 
 **Process:**
 1. **Detect** — Identify Windsurf runtime availability on the system
-2. **Install** — Configure GSD skills and hooks for the Windsurf environment
+2. **Install** — Configure gsd-dfa skills and hooks for the Windsurf environment
 
 ---
 
@@ -1371,7 +1403,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Part of:** `docs/`
 
-**Purpose:** Provide GSD documentation in Portuguese, Korean, and Japanese.
+**Purpose:** Provide gsd-dfa documentation in Portuguese, Korean, and Japanese.
 
 **Requirements:**
 - REQ-I18N-01: Documentation MUST be available in Portuguese (pt), Korean (ko), and Japanese (ja)
@@ -1385,21 +1417,21 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ## v1.30 Features
 
-### 58. GSD SDK
+### 58. gsd-dfa SDK
 
 **Command:** Programmatic API (headless)
 
-**Purpose:** Headless TypeScript SDK for running GSD workflows programmatically without a CLI session.
+**Purpose:** Headless TypeScript SDK for running gsd-dfa workflows programmatically without a CLI session.
 
 **Requirements:**
-- REQ-SDK-01: SDK MUST expose GSD workflow operations as TypeScript functions
+- REQ-SDK-01: SDK MUST expose gsd-dfa workflow operations as TypeScript functions
 - REQ-SDK-02: SDK MUST support headless execution without interactive prompts
 - REQ-SDK-03: SDK MUST produce the same artifacts as CLI-driven workflows
 
 **Process:**
-1. **Import** — Import GSD SDK into a TypeScript/JavaScript project
+1. **Import** — Import gsd-dfa SDK into a TypeScript/JavaScript project
 2. **Configure** — Set project path and workflow options programmatically
-3. **Execute** — Run GSD phases (discuss, plan, execute) via API calls
+3. **Execute** — Run gsd-dfa phases (discuss, plan, execute) via API calls
 
 ---
 
@@ -1593,9 +1625,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 68. Claude Code Skills Migration
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx gsd-dfa`
 
-**Purpose:** Migrate GSD commands to Claude Code 2.1.88+ skills format with backward compatibility.
+**Purpose:** Migrate gsd-dfa commands to Claude Code 2.1.88+ skills format with backward compatibility.
 
 **Requirements:**
 - REQ-SKILLS-01: Installer MUST write `skills/gsd-*/SKILL.md` for Claude Code 2.1.88+
@@ -1604,7 +1636,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Process:**
 1. **Detect** — Check Claude Code version to determine skills support
-2. **Migrate** — Write `skills/gsd-*/SKILL.md` files for each GSD command
+2. **Migrate** — Write `skills/gsd-*/SKILL.md` files for each gsd-dfa command
 3. **Clean** — Remove legacy `commands/gsd/` directory if skills are installed
 4. **Fallback** — Maintain Gemini path compatibility for older Claude Code versions
 
@@ -1705,7 +1737,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 74. Context Reduction
 
-**Part of:** GSD SDK prompt assembly
+**Part of:** gsd-dfa SDK prompt assembly
 
 **Purpose:** Reduce context prompt sizes through markdown truncation and cache-friendly prompt ordering.
 
@@ -1856,9 +1888,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 85. New Runtime Support (Trae, Cline, Augment Code)
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx gsd-dfa`
 
-**Purpose:** Extend GSD installation to Trae IDE, Cline, and Augment Code runtimes.
+**Purpose:** Extend gsd-dfa installation to Trae IDE, Cline, and Augment Code runtimes.
 
 **Requirements:**
 - REQ-TRAE-01: Installer MUST support `--trae` flag for Trae IDE installation
@@ -1903,7 +1935,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Hooks:** `gsd-validate-commit.sh`, `gsd-session-state.sh`, `gsd-phase-boundary.sh`
 
-**Purpose:** Optional git and session hooks for GSD projects, gated behind `hooks.community: true` in config.
+**Purpose:** Optional git and session hooks for gsd-dfa projects, gated behind `hooks.community: true` in config.
 
 **Requirements:**
 - REQ-COMMUNITY-01: All community hooks MUST be no-ops unless `hooks.community` is `true` in `.planning/config.json`
@@ -2054,11 +2086,11 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Command:** `/gsd-explore [topic]`
 
-**Purpose:** Guide a developer through exploring an idea via Socratic probing questions before committing to a plan. Routes outputs to the appropriate GSD artifact: notes, todos, seeds, research questions, requirements updates, or a new phase.
+**Purpose:** Guide a developer through exploring an idea via Socratic probing questions before committing to a plan. Routes outputs to the appropriate gsd-dfa artifact: notes, todos, seeds, research questions, requirements updates, or a new phase.
 
 **Requirements:**
 - REQ-EXPLORE-01: Exploration MUST use Socratic probing — ask questions before proposing solutions
-- REQ-EXPLORE-02: Session MUST offer to route outputs to the appropriate GSD artifact
+- REQ-EXPLORE-02: Session MUST offer to route outputs to the appropriate gsd-dfa artifact
 - REQ-EXPLORE-03: An optional topic argument MUST prime the first question
 - REQ-EXPLORE-04: Exploration MUST optionally spawn a research agent for technical feasibility
 
@@ -2068,12 +2100,12 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Command:** `/gsd-undo --last N | --phase NN | --plan NN-MM`
 
-**Purpose:** Roll back GSD phase or plan commits safely using the phase manifest and git log, with dependency checks and a hard confirmation gate before any revert is applied.
+**Purpose:** Roll back gsd-dfa phase or plan commits safely using the phase manifest and git log, with dependency checks and a hard confirmation gate before any revert is applied.
 
 **Requirements:**
 - REQ-UNDO-01: `--phase` mode MUST identify all commits for the phase via manifest and git log fallback
 - REQ-UNDO-02: `--plan` mode MUST identify all commits for a specific plan
-- REQ-UNDO-03: `--last N` mode MUST display recent GSD commits for interactive selection
+- REQ-UNDO-03: `--last N` mode MUST display recent gsd-dfa commits for interactive selection
 - REQ-UNDO-04: System MUST check for dependent phases/plans before reverting
 - REQ-UNDO-05: A confirmation gate MUST be shown before any git revert is executed
 
@@ -2083,12 +2115,12 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Command:** `/gsd-import --from <filepath>`
 
-**Purpose:** Ingest an external plan file into the GSD planning system with conflict detection against `PROJECT.md` decisions, converting it to a valid GSD PLAN.md and validating it through the plan-checker.
+**Purpose:** Ingest an external plan file into the gsd-dfa planning system with conflict detection against `PROJECT.md` decisions, converting it to a valid gsd-dfa PLAN.md and validating it through the plan-checker.
 
 **Requirements:**
 - REQ-IMPORT-01: Importer MUST detect conflicts between the external plan and existing PROJECT.md decisions
 - REQ-IMPORT-02: All detected conflicts MUST be presented to the user for resolution before writing
-- REQ-IMPORT-03: Imported plan MUST be written as a valid GSD PLAN.md format
+- REQ-IMPORT-03: Imported plan MUST be written as a valid gsd-dfa PLAN.md format
 - REQ-IMPORT-04: Written plan MUST pass `gsd-plan-checker` validation
 
 ---
@@ -2190,7 +2222,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 ## v1.35.0 Features
 
 - [New Runtime Support (Cline, CodeBuddy, Qwen Code)](#104-new-runtime-support-cline-codebuddy-qwen-code)
-- [GSD-2 Reverse Migration](#105-gsd-2-reverse-migration)
+- [gsd-dfa-2 Reverse Migration](#105-gsd-2-reverse-migration)
 - [AI Integration Phase Wizard](#106-ai-integration-phase-wizard)
 - [AI Eval Review](#107-ai-eval-review)
 
@@ -2198,9 +2230,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 104. New Runtime Support (Cline, CodeBuddy, Qwen Code)
 
-**Part of:** `npx get-shit-done-cc`
+**Part of:** `npx gsd-dfa`
 
-**Purpose:** Extend GSD installation to Cline, CodeBuddy, and Qwen Code runtimes.
+**Purpose:** Extend gsd-dfa installation to Cline, CodeBuddy, and Qwen Code runtimes.
 
 **Requirements:**
 - REQ-CLINE-02: Cline install MUST write `.clinerules` to `~/.cline/` (global) or `./.cline/` (local). No custom slash commands — rules-based integration only. Flag: `--cline`.
@@ -2217,11 +2249,11 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ---
 
-### 105. GSD-2 Reverse Migration
+### 105. gsd-dfa-2 Reverse Migration
 
 **Command:** `/gsd-from-gsd2 [--dry-run] [--force] [--path <dir>]`
 
-**Purpose:** Migrate a project from GSD-2 format (`.gsd/` directory with Milestone→Slice→Task hierarchy) back to the v1 `.planning/` format, restoring full compatibility with all GSD v1 commands.
+**Purpose:** Migrate a project from gsd-dfa-2 format (`.gsd/` directory with Milestone→Slice→Task hierarchy) back to the v1 `.planning/` format, restoring full compatibility with all gsd-dfa v1 commands.
 
 **Requirements:**
 - REQ-FROM-GSD2-01: Importer MUST read `.gsd/` from the specified or current directory
@@ -2236,7 +2268,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 |------|-------------|
 | `--dry-run` | Preview migration output without writing files |
 | `--force` | Overwrite an existing `.planning/` directory |
-| `--path <dir>` | Specify the GSD-2 root directory |
+| `--path <dir>` | Specify the gsd-dfa-2 root directory |
 
 ---
 

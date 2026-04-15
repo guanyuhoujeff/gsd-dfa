@@ -1,4 +1,4 @@
-# GSD Architecture
+# gsd-dfa Architecture
 
 > System architecture for contributors and advanced users. For user-facing documentation, see [Feature Reference](FEATURES.md) or [User Guide](USER-GUIDE.md).
 
@@ -21,7 +21,7 @@
 
 ## System Overview
 
-GSD is a **meta-prompting framework** that sits between the user and AI coding agents (Claude Code, Gemini CLI, OpenCode, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code). It provides:
+gsd-dfa is a **meta-prompting framework** that sits between the user and AI coding agents (Claude Code, Gemini CLI, OpenCode, Kilo, Codex, Copilot, Antigravity, Trae, Cline, Augment Code). It provides:
 
 1. **Context engineering** — Structured artifacts that give the AI everything it needs per task
 2. **Multi-agent orchestration** — Thin orchestrators that spawn specialized agents with fresh context windows
@@ -172,7 +172,7 @@ Shared knowledge documents that workflows and agents `@-reference` (35 total):
 
 **Thinking model references:**
 
-References for integrating thinking-class models (o3, o4-mini, Gemini 2.5 Pro) into GSD workflows:
+References for integrating thinking-class models (o3, o4-mini, Gemini 2.5 Pro) into gsd-dfa workflows:
 
 - `thinking-models-debug.md` — Thinking model patterns for debugging workflows
 - `thinking-models-execution.md` — Thinking model patterns for execution agents
@@ -208,9 +208,9 @@ Runtime hooks that integrate with the host AI agent:
 |------|-------|---------|
 | `gsd-statusline.js` | `statusLine` | Displays model, task, directory, and context usage bar |
 | `gsd-context-monitor.js` | `PostToolUse` / `AfterTool` | Injects agent-facing context warnings at 35%/25% remaining |
-| `gsd-check-update.js` | `SessionStart` | Background check for new GSD versions |
+| `gsd-check-update.js` | `SessionStart` | Background check for new gsd-dfa versions |
 | `gsd-prompt-guard.js` | `PreToolUse` | Scans `.planning/` writes for prompt injection patterns (advisory) |
-| `gsd-workflow-guard.js` | `PreToolUse` | Detects file edits outside GSD workflow context (advisory, opt-in via `hooks.workflow_guard`) |
+| `gsd-workflow-guard.js` | `PreToolUse` | Detects file edits outside gsd-dfa workflow context (advisory, opt-in via `hooks.workflow_guard`) |
 | `gsd-read-guard.js` | `PreToolUse` | Advisory guard preventing Edit/Write on files not yet read in the session |
 | `gsd-session-state.sh` | `PostToolUse` | Session state tracking for shell-based runtimes |
 | `gsd-validate-commit.sh` | `PostToolUse` | Commit validation for conventional commit enforcement |
@@ -482,8 +482,15 @@ Equivalent paths for other runtimes:
 │   ├── resolved/           # Archived sessions
 │   └── knowledge-base.md   # Persistent debug learnings
 ├── ui-reviews/             # Screenshots from /gsd-ui-review (gitignored)
+├── dfa/                    # DFA artifacts (standalone audit mode)
+│   ├── DFA-{subsystem}.md            # State table per subsystem (states, events, transitions, guards, forbidden, ignored)
+│   ├── DFA-cross-subsystem-scenarios.md  # Multi-DFA interaction matrix
+│   ├── DFA-BTREE.md                  # Hierarchical behavior tree (L0/L1/L2)
+│   └── DFA-AUDIT-{date}.md           # Spec-vs-code gap report from /gsd-dfa-audit
 └── continue-here.md        # Context handoff (from pause-work)
 ```
+
+**Phase-bound DFA artifacts** live inside `phases/XX-phase-name/` as `{N}-DFA-{subsystem}.md`, `{N}-DFA-SCENARIOS.md`, and `{N}-DFA-BTREE.md`. The planner and verifier auto-detect these and alter their behavior: planner decomposes by transition, verifier's Step 5b gates on transition coverage. See [DFA Methodology](DFA-METHODOLOGY.md).
 
 ---
 
@@ -509,7 +516,7 @@ The installer (`bin/install.js`, ~3,000 lines) handles:
 6. **Settings integration** — Registers hooks in runtime's `settings.json`
 7. **Patch backup** — Since v1.17, backs up locally modified files to `gsd-local-patches/` for `/gsd-reapply-patches`
 8. **Manifest tracking** — Writes `gsd-file-manifest.json` for clean uninstall
-9. **Uninstall mode** — `--uninstall` removes all GSD files, hooks, and settings
+9. **Uninstall mode** — `--uninstall` removes all gsd-dfa files, hooks, and settings
 
 ### Platform Handling
 
@@ -567,7 +574,7 @@ Debounce: 5 tool uses between repeated warnings. Severity escalation (WARNING→
 
 **Workflow Guard** (`gsd-workflow-guard.js`):
 - Triggers on Write/Edit to non-`.planning/` files
-- Detects edits outside GSD workflow context (no active `/gsd-` command or Task subagent)
+- Detects edits outside gsd-dfa workflow context (no active `/gsd-` command or Task subagent)
 - Advises using `/gsd-quick` or `/gsd-fast` for state-tracked changes
 - Opt-in via `hooks.workflow_guard: true` (default: false)
 
@@ -575,7 +582,7 @@ Debounce: 5 tool uses between repeated warnings. Severity escalation (WARNING→
 
 ## Runtime Abstraction
 
-GSD supports multiple AI coding runtimes through a unified command/workflow architecture:
+gsd-dfa supports multiple AI coding runtimes through a unified command/workflow architecture:
 
 | Runtime | Command Format | Agent System | Config Location |
 |---------|---------------|--------------|-----------------|
@@ -596,6 +603,6 @@ GSD supports multiple AI coding runtimes through a unified command/workflow arch
 2. **Hook event names** — Claude uses `PostToolUse`, Gemini uses `AfterTool`
 3. **Agent frontmatter** — Each runtime has its own agent definition format
 4. **Path conventions** — Each runtime stores config in different directories
-5. **Model references** — `inherit` profile lets GSD defer to runtime's model selection
+5. **Model references** — `inherit` profile lets gsd-dfa defer to runtime's model selection
 
 The installer handles all translation at install time. Workflows and agents are written in Claude Code's native format and transformed during deployment.

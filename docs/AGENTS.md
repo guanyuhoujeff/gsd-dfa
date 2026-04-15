@@ -1,4 +1,4 @@
-# GSD Agent Reference
+# gsd-dfa Agent Reference
 
 > All 21 specialized agents — roles, tools, spawn patterns, and relationships. For architecture context, see [Architecture](ARCHITECTURE.md).
 
@@ -6,7 +6,19 @@
 
 ## Overview
 
-GSD uses a multi-agent architecture where thin orchestrators (workflow files) spawn specialized agents with fresh context windows. Each agent has a focused role, limited tool access, and produces specific artifacts.
+gsd-dfa uses a multi-agent architecture where thin orchestrators (workflow files) spawn specialized agents with fresh context windows. Each agent has a focused role, limited tool access, and produces specific artifacts.
+
+### DFA-aware agents
+
+Three agents participate in the DFA workflow introduced by gsd-dfa. No new agent files are added — the DFA integration lives inside these existing agents' prompts:
+
+| Agent | DFA role |
+|-------|---------|
+| **gsd-phase-researcher** | Identifies DFA candidates during research; flags stateful subsystems that warrant `/gsd-dfa-model` before planning |
+| **gsd-planner** | Consumes `{N}-DFA-*.md` artifacts when present and decomposes plans **by transition** rather than by feature. See `get-shit-done/references/dfa-aware-planning.md` |
+| **gsd-verifier** | Step 5b (DFA Transition Coverage) flags uncovered transitions as gaps, not just uncovered features |
+
+For the full DFA workflow, see [DFA Methodology](DFA-METHODOLOGY.md).
 
 ### Agent Categories
 
@@ -195,7 +207,7 @@ GSD uses a multi-agent architecture where thin orchestrators (workflow files) sp
 
 ### gsd-executor
 
-**Role:** Executes GSD plans with atomic commits, deviation handling, and checkpoint protocols.
+**Role:** Executes gsd-dfa plans with atomic commits, deviation handling, and checkpoint protocols.
 
 | Property | Value |
 |----------|-------|

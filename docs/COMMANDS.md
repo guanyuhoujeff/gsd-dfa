@@ -1,4 +1,4 @@
-# GSD Command Reference
+# gsd-dfa Command Reference
 
 > Complete command syntax, flags, options, and examples. For feature details, see [Feature Reference](FEATURES.md). For workflow walkthroughs, see [User Guide](USER-GUIDE.md).
 
@@ -46,7 +46,7 @@ Create an isolated workspace with repo copies and independent `.planning/` direc
 | `--auto` | Skip interactive questions |
 
 **Use cases:**
-- Multi-repo: work on a subset of repos with isolated GSD state
+- Multi-repo: work on a subset of repos with isolated gsd-dfa state
 - Feature isolation: `--repos .` creates a worktree of the current repo
 
 **Produces:** `WORKSPACE.md`, `.planning/`, repo copies (worktrees or clones)
@@ -61,10 +61,10 @@ Create an isolated workspace with repo copies and independent `.planning/` direc
 
 ### `/gsd-list-workspaces`
 
-List active GSD workspaces and their status.
+List active gsd-dfa workspaces and their status.
 
 **Scans:** `~/gsd-workspaces/` for `WORKSPACE.md` manifests
-**Shows:** Name, repo count, strategy, GSD project status
+**Shows:** Name, repo count, strategy, gsd-dfa project status
 
 ```bash
 /gsd-list-workspaces
@@ -275,7 +275,7 @@ Retroactive 6-pillar visual audit of implemented frontend.
 |----------|----------|-------------|
 | `N` | No | Phase number (defaults to last executed phase) |
 
-**Prerequisites:** Project has frontend code (works standalone, no GSD project needed)
+**Prerequisites:** Project has frontend code (works standalone, no gsd-dfa project needed)
 **Produces:** `{phase}-UI-REVIEW.md`, screenshots in `.planning/ui-reviews/`
 
 ```bash
@@ -367,6 +367,40 @@ Start next version cycle.
 /gsd-new-milestone "v2.0 Mobile"    # Named milestone
 /gsd-new-milestone --reset-phase-numbers "v2.0 Mobile"  # Restart milestone numbering at 1
 ```
+
+---
+
+## DFA Commands
+
+> **Core differentiator of gsd-dfa.** Model stateful subsystems as Deterministic Finite Automata before implementation, so every `(state, event)` combination is explicitly handled instead of silently dropped. See [DFA Methodology](DFA-METHODOLOGY.md) for when to use these and the [Kiosk Worked Example](examples/dfa-kiosk-worked-example.md) for a full pipeline walkthrough.
+
+### `/gsd-dfa-scan`
+
+Scan codebase or phase description for DFA candidates — subsystems with 3+ states whose behavior depends on current state. Produces a candidate list with rationale; use before modeling to decide which subsystems warrant a DFA.
+
+### `/gsd-dfa-model <subsystem>`
+
+Create a DFA state table for one subsystem: states, events, transitions, guards, actions, forbidden cells, ignored cells. Output: `.planning/phases/XX-name/{N}-DFA-{subsystem}.md` (phase-bound) or `.planning/dfa/DFA-{subsystem}.md` (standalone audit).
+
+### `/gsd-dfa-verify`
+
+Validate a DFA model's completeness: no empty cells, dead states, or unreachable transitions. Flags guard exhaustiveness gaps and "impossible" cells that are really implicit preconditions on upstream subsystems.
+
+### `/gsd-dfa-scenarios`
+
+Cross-subsystem scenario matrix. Given 2+ DFAs, enumerates critical state combinations where subsystems interact — failure cascades, event ordering races, and shared-event routing gaps that are invisible when each DFA is reviewed alone.
+
+### `/gsd-dfa-btree [--level 0|1|2]`
+
+Generate a hierarchical behavior tree across all DFAs. `--level 0` produces a system-wide event-flow graph (catches boundary violations, umbrella events without routers). `--level 1` expands per-entry-point decision trees (catches cross-subsystem state invariants). `--level 2` drills into individual transition logic.
+
+### `/gsd-dfa-tests`
+
+Generate test skeletons from a DFA model — one test per transition, one per forbidden cell, one per ignored cell. Bootstraps coverage so the executor only fills in implementation details.
+
+### `/gsd-dfa-audit`
+
+Compare DFA spec against implemented code. Produces a gap list: unhandled transitions, unimplemented forbidden-cell error handling, missing guards. Used post-implementation or for retroactive audits of systems built without DFA.
 
 ---
 
@@ -544,7 +578,7 @@ Show all commands and usage guide.
 
 ### `/gsd-explore`
 
-Socratic ideation session — guide an idea through probing questions, optionally spawn research, then route output to the right GSD artifact (notes, todos, seeds, research questions, requirements, or a new phase).
+Socratic ideation session — guide an idea through probing questions, optionally spawn research, then route output to the right gsd-dfa artifact (notes, todos, seeds, research questions, requirements, or a new phase).
 
 | Argument | Required | Description |
 |----------|----------|-------------|
@@ -559,18 +593,18 @@ Socratic ideation session — guide an idea through probing questions, optionall
 
 ### `/gsd-undo`
 
-Safe git revert — roll back GSD phase or plan commits using the phase manifest with dependency checks and a confirmation gate.
+Safe git revert — roll back gsd-dfa phase or plan commits using the phase manifest with dependency checks and a confirmation gate.
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--last N` | (one of three required) | Show recent GSD commits for interactive selection |
+| `--last N` | (one of three required) | Show recent gsd-dfa commits for interactive selection |
 | `--phase NN` | (one of three required) | Revert all commits for a phase |
 | `--plan NN-MM` | (one of three required) | Revert all commits for a specific plan |
 
 **Safety:** Checks dependent phases/plans before reverting; always shows a confirmation gate.
 
 ```bash
-/gsd-undo --last 5                  # Pick from the 5 most recent GSD commits
+/gsd-undo --last 5                  # Pick from the 5 most recent gsd-dfa commits
 /gsd-undo --phase 03                # Revert all commits for phase 3
 /gsd-undo --plan 03-02              # Revert commits for plan 02 of phase 3
 ```
@@ -579,13 +613,13 @@ Safe git revert — roll back GSD phase or plan commits using the phase manifest
 
 ### `/gsd-import`
 
-Ingest an external plan file into the GSD planning system with conflict detection against `PROJECT.md` decisions before writing anything.
+Ingest an external plan file into the gsd-dfa planning system with conflict detection against `PROJECT.md` decisions before writing anything.
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--from <filepath>` | **Yes** | Path to the external plan file to import |
 
-**Process:** Detects conflicts → prompts for resolution → writes as GSD PLAN.md → validates via `gsd-plan-checker`
+**Process:** Detects conflicts → prompts for resolution → writes as gsd-dfa PLAN.md → validates via `gsd-plan-checker`
 
 ```bash
 /gsd-import --from /tmp/team-plan.md  # Import and validate an external plan
@@ -595,13 +629,13 @@ Ingest an external plan file into the GSD planning system with conflict detectio
 
 ### `/gsd-from-gsd2`
 
-Reverse migration from GSD-2 format (`.gsd/` with Milestone→Slice→Task hierarchy) back to v1 `.planning/` format.
+Reverse migration from gsd-dfa-2 format (`.gsd/` with Milestone→Slice→Task hierarchy) back to v1 `.planning/` format.
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--dry-run` | No | Preview what would be migrated without writing anything |
 | `--force` | No | Overwrite existing `.planning/` directory |
-| `--path <dir>` | No | Specify GSD-2 root directory (defaults to current directory) |
+| `--path <dir>` | No | Specify gsd-dfa-2 root directory (defaults to current directory) |
 
 **Flattening:** Milestone→Slice hierarchy is flattened to sequential phase numbers (M001/S01→phase 01, M001/S02→phase 02, M002/S01→phase 03, etc.).
 
@@ -613,14 +647,14 @@ Reverse migration from GSD-2 format (`.gsd/` with Milestone→Slice→Task hiera
 /gsd-from-gsd2                          # Migrate .gsd/ in current directory
 /gsd-from-gsd2 --dry-run                # Preview migration without writing
 /gsd-from-gsd2 --force                  # Overwrite existing .planning/
-/gsd-from-gsd2 --path /path/to/gsd2-project  # Specify GSD-2 root
+/gsd-from-gsd2 --path /path/to/gsd2-project  # Specify gsd-dfa-2 root
 ```
 
 ---
 
 ### `/gsd-quick`
 
-Execute ad-hoc task with GSD guarantees.
+Execute ad-hoc task with gsd-dfa guarantees.
 
 | Flag | Description |
 |------|-------------|
@@ -656,7 +690,7 @@ Run all remaining phases autonomously.
 
 ### `/gsd-do`
 
-Route freeform text to the right GSD command.
+Route freeform text to the right gsd-dfa command.
 
 ```bash
 /gsd-do                             # Then describe what you want
@@ -786,7 +820,7 @@ Archive accumulated phase directories from completed milestones.
 
 ### `/gsd-forensics`
 
-Post-mortem investigation of failed or stuck GSD workflows.
+Post-mortem investigation of failed or stuck gsd-dfa workflows.
 
 | Argument | Required | Description |
 |----------|----------|-------------|
@@ -828,7 +862,7 @@ Manage parallel workstreams for concurrent work on different milestone areas.
 | `complete <name>` | Archive a completed workstream |
 | `resume <name>` | Resume work in a workstream |
 
-**Prerequisites:** Active GSD project
+**Prerequisites:** Active gsd-dfa project
 **Produces:** Workstream directories under `.planning/`, state tracking per workstream
 
 ```bash
@@ -960,7 +994,7 @@ Retroactive audit of an implemented AI phase's evaluation coverage. Checks imple
 
 ### `/gsd-update`
 
-Update GSD with changelog preview.
+Update gsd-dfa with changelog preview.
 
 ```bash
 /gsd-update                         # Check for updates and install
@@ -968,7 +1002,7 @@ Update GSD with changelog preview.
 
 ### `/gsd-reapply-patches`
 
-Restore local modifications after a GSD update.
+Restore local modifications after a gsd-dfa update.
 
 ```bash
 /gsd-reapply-patches                # Merge back local changes
@@ -1100,7 +1134,7 @@ Create a clean PR branch by filtering out `.planning/` commits.
 |----------|----------|-------------|
 | `target branch` | No | Base branch (default: `main`) |
 
-**Purpose:** Reviewers see only code changes, not GSD planning artifacts.
+**Purpose:** Reviewers see only code changes, not gsd-dfa planning artifacts.
 
 ```bash
 /gsd-pr-branch                     # Filter against main
