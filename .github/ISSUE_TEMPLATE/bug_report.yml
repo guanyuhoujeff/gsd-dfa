@@ -16,8 +16,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: GSD Version
-      description: "Run: `npm list -g get-shit-done-cc` or check `npx get-shit-done-cc --version`"
+      label: gsd-dfa Version
+      description: "Run: `npm list -g gsd-dfa` or check `npx gsd-dfa --version`"
       placeholder: "e.g., 1.18.0"
     validations:
       required: true
@@ -26,7 +26,7 @@ body:
     id: runtime
     attributes:
       label: Runtime
-      description: Which AI coding tool are you using GSD with?
+      description: Which AI coding tool are you using gsd-dfa with?
       options:
         - Claude Code
         - Gemini CLI
@@ -78,8 +78,8 @@ body:
     attributes:
       label: Installation Method
       options:
-        - npx get-shit-done-cc@latest (fresh run)
-        - npm install -g get-shit-done-cc
+        - npx gsd-dfa@latest (fresh run)
+        - npm install -g gsd-dfa
         - Updated from a previous version
     validations:
       required: true
@@ -88,7 +88,7 @@ body:
     id: description
     attributes:
       label: What happened?
-      description: Describe what went wrong. Be specific about which GSD command you were running.
+      description: Describe what went wrong. Be specific about which gsd-dfa command you were running.
       placeholder: |
         When I ran `/gsd-plan`, the system...
     validations:
@@ -107,9 +107,9 @@ body:
     attributes:
       label: Steps to reproduce
       description: |
-        Exact steps to reproduce the issue. Include the GSD command used.
+        Exact steps to reproduce the issue. Include the gsd-dfa command used.
       placeholder: |
-        1. Install GSD with `npx get-shit-done-cc@latest`
+        1. Install gsd-dfa with `npx gsd-dfa@latest`
         2. Select runtime: Claude Code
         3. Run `/gsd-init` with a new project
         4. Run `/gsd-plan`
@@ -132,7 +132,7 @@ body:
   - type: textarea
     id: config
     attributes:
-      label: GSD Configuration
+      label: gsd-dfa Configuration
       description: |
         If the bug is related to planning, phases, or workflow behavior, paste your `.planning/config.json`.
 
@@ -146,7 +146,7 @@ body:
   - type: textarea
     id: state
     attributes:
-      label: GSD State (if relevant)
+      label: gsd-dfa State (if relevant)
       description: |
         If the bug involves incorrect state tracking or phase progression, include your `.planning/STATE.md`.
 
@@ -192,7 +192,7 @@ body:
       label: Impact
       description: How much does this affect your workflow?
       options:
-        - Blocker — Cannot use GSD at all
+        - Blocker — Cannot use gsd-dfa at all
         - Major — Core feature is broken, no workaround
         - Moderate — Feature is broken but I have a workaround
         - Minor — Cosmetic or edge case
@@ -215,7 +215,7 @@ body:
         Anything else — screenshots, screen recordings, related issues, or links.
 
         **Useful diagnostics to include (if applicable):**
-        - `npm list -g get-shit-done-cc` — confirms installed version
+        - `npm list -g gsd-dfa` — confirms installed version
         - `ls -la ~/.claude/get-shit-done/` — confirms installation files (Claude Code)
         - `cat ~/.claude/get-shit-done/gsd-file-manifest.json` — file manifest for debugging install issues
         - `ls -la .planning/` — confirms planning directory state
