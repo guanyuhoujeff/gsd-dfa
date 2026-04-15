@@ -1,4 +1,4 @@
-# DFA Methodology for GSD
+# DFA Methodology for gsd-dfa
 
 **Version:** 0.1.0
 **Author:** barai (fork extension)
@@ -6,9 +6,9 @@
 
 ---
 
-## Why DFA in GSD
+## Why DFA in gsd-dfa
 
-GSD's original workflow produces **task-oriented** plans: "do X, then Y, then Z." This works well for feature buildout but leaves gaps when planning **stateful systems** — systems where behavior depends on *what state the system is in* when an event arrives.
+gsd-dfa's original workflow produces **task-oriented** plans: "do X, then Y, then Z." This works well for feature buildout but leaves gaps when planning **stateful systems** — systems where behavior depends on *what state the system is in* when an event arrives.
 
 Examples of stateful systems where natural language planning fails:
 
@@ -32,7 +32,7 @@ Examples of stateful systems where natural language planning fails:
 
 A DFA is defined by a 5-tuple `(Q, Σ, δ, q₀, F)`:
 
-| Symbol | Meaning | In GSD context |
+| Symbol | Meaning | In gsd-dfa context |
 |--------|---------|----------------|
 | Q | Finite set of states | All states a subsystem can be in |
 | Σ | Finite set of input symbols (events) | All events the subsystem reacts to |
@@ -71,13 +71,13 @@ Hierarchical modeling is optional. Start flat; promote to hierarchy only when du
 
 ---
 
-## Integration with GSD Workflow
+## Integration with gsd-dfa Workflow
 
 DFA supports two usage modes:
 
 ### Mode 1: Phase-Bound (new feature development)
 
-DFA modeling integrates at specific points in the existing GSD pipeline:
+DFA modeling integrates at specific points in the existing gsd-dfa pipeline:
 
 ```
 research-phase  ──→  /gsd-dfa-scan to identify STATEFUL subsystems
@@ -220,9 +220,9 @@ When multiple DFAs interact, enumerate critical state combinations. You don't ne
 
 ---
 
-## Relationship to Existing GSD Concepts
+## Relationship to Existing gsd-dfa Concepts
 
-| GSD Concept | DFA Equivalent |
+| gsd-dfa Concept | DFA Equivalent |
 |-------------|----------------|
 | Locked Decision (D-XX) | May constrain which states/events exist |
 | Task in PLAN.md | One or more transitions to implement |
@@ -283,9 +283,19 @@ Bad:  "conditions are met", "when appropriate"
 
 ---
 
+## Worked Example: Smart Beverage Kiosk
+
+A full end-to-end walkthrough of the pipeline (`/gsd-dfa-model` → `/gsd-dfa-btree --level 0` → fix findings → `--level 1` → `/gsd-dfa-verify` → liveness review) on a self-service beverage kiosk with 3 interacting DFAs (Session, OrderCart, VoiceInteraction), totalling 21 states / 32 events / 57 transitions.
+
+The example is deliberately chosen so that no single subsystem is complicated, but the **interactions between subsystems** produce the exact class of bugs this methodology is designed to catch — boundary violations, umbrella events without routers, cross-subsystem state invariants, and liveness/timeout gaps.
+
+**Full walkthrough, findings, and key lessons:** see [`docs/examples/dfa-kiosk-worked-example.md`](./examples/dfa-kiosk-worked-example.md).
+
+---
+
 ## References
 
 - Hopcroft, Motwani, Ullman — *Introduction to Automata Theory, Languages, and Computation*
 - Harel — Statecharts: A Visual Formalism for Complex Systems (1987)
 - XState documentation — Practical state machines in JavaScript/TypeScript
-- Original GSD: [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)
+- Upstream ancestor: [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done)
