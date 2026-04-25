@@ -43,6 +43,7 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 | Mapping or analyzing an existing codebase | `/gsd-map-codebase` | Codebase discovery |
 | A bug, error, crash, failure, or something broken | `/gsd-debug` | Needs systematic investigation |
 | Exploring, researching, comparing, or "how does X work" | `/gsd-research-phase` | Domain research before planning |
+| Anything about **state machines, DFA, FSM, transitions, stateful subsystems**, lifecycle states | DFA family (see below) | DFA modeling — gsd-dfa's core differentiator |
 | Discussing vision, "how should X look", brainstorming | `/gsd-discuss-phase` | Needs context gathering |
 | A complex task: refactoring, migration, multi-file architecture, system redesign | `/gsd-add-phase` | Needs a full phase with plan/build cycle |
 | Planning a specific phase or "plan phase N" | `/gsd-plan-phase` | Direct planning request |
@@ -56,7 +57,21 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 | Completing a milestone, shipping, releasing | `/gsd-complete-milestone` | Milestone lifecycle |
 | A specific, actionable, small task (add feature, fix typo, update config) | `/gsd-quick` | Self-contained, single executor |
 
-**Requires `.planning/` directory:** All routes except `/gsd-new-project`, `/gsd-map-codebase`, `/gsd-help`, and `/gsd-join-discord`. If the project doesn't exist and the route requires it, suggest `/gsd-new-project` first.
+**DFA family disambiguation:** When the main table routes to "DFA family", pick the right sub-command:
+
+| If the text describes... | Route to |
+|--------------------------|----------|
+| "scan", "find candidates", "what could be modeled as a state machine" | `/gsd-dfa-scan` |
+| "build", "model", "create state table for X", "DFA for <subsystem>" | `/gsd-dfa-model` |
+| "verify", "check completeness", "dead states", "unreachable states" | `/gsd-dfa-verify` |
+| "cross-subsystem", "failure cascades", "interaction scenarios" | `/gsd-dfa-scenarios` |
+| "behavior tree", "top-down decision view", "system overview tree" | `/gsd-dfa-btree` |
+| "generate tests from DFA", "bootstrap test cases from state table" | `/gsd-dfa-tests` |
+| "audit", "compare DFA vs code", "find spec/implementation gaps" | `/gsd-dfa-audit` |
+
+If the user's text matches the DFA family but the sub-command is ambiguous, ask via AskUserQuestion with the top 2-3 options.
+
+**Requires `.planning/` directory:** All routes except `/gsd-new-project`, `/gsd-map-codebase`, `/gsd-help`, and `/gsd-join-discord`. The DFA family does NOT require `.planning/` — `/gsd-dfa-scan`, standalone `/gsd-dfa-model`, and standalone audit/btree workflows can run on any codebase. If the project doesn't exist and the route requires it, suggest `/gsd-new-project` first.
 
 **Ambiguity handling:** If the text could reasonably match multiple routes, ask the user via AskUserQuestion with the top 2-3 options. For example:
 
