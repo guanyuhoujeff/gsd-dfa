@@ -14,6 +14,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **DFA help-coverage regression test** — `tests/dfa-help-coverage.test.cjs` asserts every `commands/gsd/dfa-*.md` is referenced in `get-shit-done/workflows/help.md`, and that the **State Machine Modeling (DFA)** section heading exists. Future DFA commands now fail the suite until they are documented. (40619d3)
+- **DFA router-coverage regression test** — `tests/dfa-router-coverage.test.cjs` asserts every `/gsd-dfa-*` command is routed by the disambiguation sub-table in `get-shit-done/workflows/do.md`. Companion to the help-coverage test. (c929992)
+- **No-upstream-references regression test** — `tests/no-upstream-references.test.cjs` forbids `gsd-build/get-shit-done` and `get-shit-done-cc` strings inside installable content (`bin/`, `commands/`, `agents/`, `hooks/`, `get-shit-done/`, `scripts/`). Prevents recurrence of links pointing users at the wrong repo or wrong npm package. README/LICENSE/CHANGELOG/docs are intentionally excluded. (5d0e771)
 
 ### Removed
 - **Stale upstream-branded i18n translations** — Deleted four locale READMEs (`README.{ja-JP,ko-KR,pt-BR,zh-CN}.md`) and matching `docs/{ja-JP,ko-KR,pt-BR,zh-CN}/` subtrees. None had been updated since the v2.0.0 fork; all translations still titled themselves "GET SHIT DONE", pointed npm badges at `get-shit-done-cc`, and instructed users to install from the wrong package. 56 files / ~1.1 MB removed. The `product-name-purity` test gracefully tolerates missing files via `fs.existsSync` filtering, so 3017/3017 tests still pass. (f09949c)
