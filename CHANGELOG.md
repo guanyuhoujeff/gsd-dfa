@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **`/gsd-help` now documents the DFA command family** — The reference shown by `/gsd-help` was missing all seven `/gsd-dfa-*` commands even though DFA modeling is gsd-dfa's stated core differentiator. Added a **State Machine Modeling (DFA)** section listing every DFA command with usage, plus a Quick Start callout, Core Workflow extension, `.planning/dfa/` entries in Files & Structure, and two Common Workflows (phase-bound modeling, reverse-engineering existing code). Also fixes a leftover `**gsd-dfa** (gsd-dfa)` placeholder from the rebrand. (73adb0c)
+
+### Added
+- **DFA help-coverage regression test** — `tests/dfa-help-coverage.test.cjs` asserts every `commands/gsd/dfa-*.md` is referenced in `get-shit-done/workflows/help.md`, and that the **State Machine Modeling (DFA)** section heading exists. Future DFA commands now fail the suite until they are documented. (40619d3)
+
 ## [1.35.0] - 2026-04-10
 
 ### Added
