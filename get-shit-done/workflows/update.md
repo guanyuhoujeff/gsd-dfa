@@ -441,7 +441,7 @@ Format completion message (changelog was already shown in confirmation step):
 
 ⚠️  Restart your runtime to pick up the new commands.
 
-[View full changelog](https://github.com/gsd-build/get-shit-done/blob/main/CHANGELOG.md)
+[View full changelog](https://github.com/guanyuhoujeff/gsd-dfa/blob/main/CHANGELOG.md)
 ```
 </step>
 
