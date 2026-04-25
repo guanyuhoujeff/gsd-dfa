@@ -5,13 +5,16 @@ Display the complete gsd-dfa command reference. Output ONLY the reference conten
 <reference>
 # gsd-dfa Command Reference
 
-**gsd-dfa** (gsd-dfa) creates hierarchical project plans optimized for solo agentic development with Claude Code.
+**gsd-dfa** (Get Shit Done + Deterministic Finite Automaton modeling) creates hierarchical project plans optimized for solo agentic development with Claude Code, with explicit state-machine modeling for stateful subsystems.
 
 ## Quick Start
 
 1. `/gsd-new-project` - Initialize project (includes research, requirements, roadmap)
 2. `/gsd-plan-phase 1` - Create detailed plan for first phase
 3. `/gsd-execute-phase 1` - Execute the phase
+
+**Building a stateful subsystem** (auth, payments, retry/circuit breaker, lifecycle, session)?
+Run `/gsd-dfa-scan` to find candidates, then `/gsd-dfa-model <subsystem> --phase N` *before* `/gsd-plan-phase N` so the planner decomposes by transition instead of by feature. See **State Machine Modeling (DFA)** below.
 
 ## Staying Updated
 
@@ -26,6 +29,14 @@ npx gsd-dfa@latest
 ```
 /gsd-new-project → /gsd-plan-phase → /gsd-execute-phase → repeat
 ```
+
+For stateful subsystems, slot DFA modeling **between** discuss/research and `/gsd-plan-phase`:
+
+```
+/gsd-discuss-phase N → /gsd-dfa-model <subsystem> --phase N → /gsd-dfa-verify --phase N → /gsd-plan-phase N
+```
+
+The planner consumes `{phase_num}-DFA-*.md` artifacts and decomposes work by *transition* rather than by feature. The verifier checks DFA transition coverage during `/gsd-verify-work`.
 
 ### Project Initialization
 
@@ -103,6 +114,83 @@ Usage: `/gsd-plan-phase 1`
 Result: Creates `.planning/phases/01-foundation/01-01-PLAN.md`
 
 **PRD Express Path:** Pass `--prd path/to/requirements.md` to skip discuss-phase entirely. Your PRD becomes locked decisions in CONTEXT.md. Useful when you already have clear acceptance criteria.
+
+### State Machine Modeling (DFA)
+
+The DFA family is gsd-dfa's core differentiator. Use it whenever a phase touches a stateful subsystem (auth/session, payment, retry/circuit breaker, connection lifecycle, order state, agent loops, etc.) so the planner gets a transition table instead of "implement reconnect logic".
+
+DFAs come in two modes:
+- **Phase-bound** (`--phase N`): tied to a GSD phase, written to `.planning/phases/XX-name/{phase_num}-DFA-{subsystem}.md`. Consumed by the planner and verifier.
+- **Standalone**: retroactive modeling of existing code, written to `.planning/dfa/DFA-{subsystem}.md`.
+
+**`/gsd-dfa-scan [directory]`**
+Scan a codebase to identify subsystems suitable for DFA modeling.
+
+- Detects state enums, reducers, FSM patterns, lifecycle methods, circuit breakers
+- Ranks candidates by statefulness signals
+- Output is informational (no file written) — use before `/gsd-dfa-model`
+
+Usage: `/gsd-dfa-scan` or `/gsd-dfa-scan ./src`
+
+**`/gsd-dfa-model <subsystem> [--phase N | --standalone]`**
+Build a complete DFA state table for one subsystem.
+
+- Enumerates states (with invariants), events (with sources), transitions, forbidden transitions, and ignored cells
+- Produces an N×M completeness matrix — no empty cells allowed
+- Optionally generates a Mermaid state diagram
+- Phase-bound by default when `--phase N` given; standalone when no phase or `--standalone`
+
+Usage: `/gsd-dfa-model auth-session --phase 5`
+Usage: `/gsd-dfa-model order-state --standalone`
+
+**`/gsd-dfa-verify [file-or-dir] [--phase N]`**
+Verify DFA self-consistency before relying on it.
+
+- Checks for dead states, unreachable states, unhandled (state,event) cells, guard exhaustiveness, terminal-state validity, event-source consistency
+- Cross-DFA event consistency (events produced by one DFA match events consumed by another)
+- ERROR / WARNING / INFO severity output
+
+Usage: `/gsd-dfa-verify --phase 5`
+Usage: `/gsd-dfa-verify .planning/dfa/`
+
+**`/gsd-dfa-scenarios [--phase N] [--dir <path>]`**
+Generate cross-subsystem scenario matrix when 2+ DFAs interact.
+
+- Identifies dangerous state combinations across subsystems
+- Maps failure cascades (A fails → how does B react?)
+- Flags event-ordering sensitivities (A then B vs B then A)
+- Output: `{phase_num}-DFA-SCENARIOS.md` (phase-bound) or `.planning/dfa/DFA-cross-subsystem-scenarios.md` (standalone)
+
+Usage: `/gsd-dfa-scenarios --phase 5`
+
+**`/gsd-dfa-btree [--level 0|1|2] [--event <event-name>] [--dir <path>]`**
+Synthesize all DFAs into a hierarchical Behavior Tree with Mermaid diagrams.
+
+- L0: system overview / L1: capability trees / L2: full detail with every guard and action
+- Cross-subsystem view answering "what happens when event X arrives?"
+- Output: `.planning/dfa/DFA-BTREE.md` (or `DFA-BTREE-{event}.md` for single-event focus)
+
+Usage: `/gsd-dfa-btree --level 1`
+
+**`/gsd-dfa-tests <dfa-file> [--lang python|typescript|go]`**
+Generate test skeletons from a DFA transition table.
+
+- Each `T-XX` (transition) → test asserting state change + action + emitted event
+- Each `F-XX` (forbidden) → test asserting state unchanged + error logged
+- Each `S-XX` (self-loop) → test asserting state unchanged + action fired
+- Auto-detects language if `--lang` omitted
+
+Usage: `/gsd-dfa-tests .planning/phases/05-auth/05-DFA-auth-session.md`
+
+**`/gsd-dfa-audit [file-or-directory]`**
+Compare DFA specs against actual code to find implementation gaps.
+
+- For each transition, checks code handles it
+- For each forbidden transition, checks code rejects it
+- Flags code paths not covered by any DFA transition
+- Output: `.planning/dfa/DFA-AUDIT-{date}.md` with severity and fix direction
+
+Usage: `/gsd-dfa-audit .planning/dfa/`
 
 ### Execution
 
@@ -494,10 +582,17 @@ Usage: `/gsd-join-discord`
 │   ├── TESTING.md        # Test setup, patterns
 │   ├── INTEGRATIONS.md   # External services, APIs
 │   └── CONCERNS.md       # Tech debt, known issues
+├── dfa/                  # Standalone DFA artifacts (cross-phase / retroactive)
+│   ├── DFA-{subsystem}.md             # State table per subsystem
+│   ├── DFA-BTREE.md                   # Hierarchical behavior tree
+│   ├── DFA-cross-subsystem-scenarios.md  # Cross-DFA scenario matrix
+│   └── DFA-AUDIT-{YYYY-MM-DD}.md      # Spec-vs-code gap report
 └── phases/
-    ├── 01-foundation/
-    │   ├── 01-01-PLAN.md
-    │   └── 01-01-SUMMARY.md
+    ├── 05-auth/
+    │   ├── 05-01-PLAN.md
+    │   ├── 05-01-SUMMARY.md
+    │   ├── 05-DFA-auth-session.md     # Phase-bound DFA state table
+    │   └── 05-DFA-SCENARIOS.md        # Phase-bound cross-subsystem scenarios
     └── 02-core-features/
         ├── 02-01-PLAN.md
         └── 02-01-SUMMARY.md
@@ -598,6 +693,29 @@ Example config:
 # ... investigation happens, context fills up ...
 /clear
 /gsd-debug                                    # Resume from where you left off
+```
+
+**Modeling a stateful subsystem inside a phase:**
+
+```
+/gsd-discuss-phase 5                            # Capture vision
+/gsd-dfa-model auth-session --phase 5           # Build state table BEFORE planning
+/gsd-dfa-verify --phase 5                       # Catch dead states / unhandled events
+/gsd-plan-phase 5                               # Planner decomposes by transition
+/gsd-dfa-tests .planning/phases/05-*/05-DFA-auth-session.md   # Bootstrap test skeletons
+/gsd-execute-phase 5
+/gsd-verify-work 5                              # Verifier checks transition coverage
+```
+
+**Reverse-engineering DFAs from existing code:**
+
+```
+/gsd-dfa-scan ./src                                  # Find candidate subsystems
+/gsd-dfa-model order-state --standalone              # Model one at a time
+/gsd-dfa-model payment-flow --standalone
+/gsd-dfa-scenarios                                   # Cross-subsystem risks
+/gsd-dfa-audit .planning/dfa/                        # Find code-vs-spec gaps
+/gsd-dfa-btree --level 1                             # Generate top-down decision tree
 ```
 
 ## Getting Help
