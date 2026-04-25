@@ -8,9 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - **`/gsd-help` now documents the DFA command family** — The reference shown by `/gsd-help` was missing all seven `/gsd-dfa-*` commands even though DFA modeling is gsd-dfa's stated core differentiator. Added a **State Machine Modeling (DFA)** section listing every DFA command with usage, plus a Quick Start callout, Core Workflow extension, `.planning/dfa/` entries in Files & Structure, and two Common Workflows (phase-bound modeling, reverse-engineering existing code). Also fixes a leftover `**gsd-dfa** (gsd-dfa)` placeholder from the rebrand. (73adb0c)
+- **`/gsd-do` now routes DFA-family vocabulary** — The dispatcher had zero rules for `/gsd-dfa-*`, so freeform input like "model the auth state machine" or "scan for stateful subsystems" fell through to `/gsd-add-phase` or `/gsd-quick`. Added a main-table catch-all for state machine / DFA / FSM / transition / lifecycle vocabulary plus a sub-table mapping intent phrases to each of the seven DFA commands. Notes that DFA family does not require `.planning/`. (ca4a319)
+- **`CHANGELOG.md` shipped to npm** — The installer copies `CHANGELOG.md` from the package root, but `package.json`'s `files` array did not include it, so npm-installed users hit a silent install failure (`failures.push('CHANGELOG.md')`) and `/gsd-update`'s changelog preview was empty. (c982f97)
+- **`/gsd-update` changelog link now points at gsd-dfa** — Was still pointing at `gsd-build/get-shit-done`, the upstream we forked from. Users clicking it landed on the wrong project's release notes. Repointed to `guanyuhoujeff/gsd-dfa`. (eedb9d8)
 
 ### Added
 - **DFA help-coverage regression test** — `tests/dfa-help-coverage.test.cjs` asserts every `commands/gsd/dfa-*.md` is referenced in `get-shit-done/workflows/help.md`, and that the **State Machine Modeling (DFA)** section heading exists. Future DFA commands now fail the suite until they are documented. (40619d3)
+
+### Removed
+- **Stale upstream-branded i18n translations** — Deleted four locale READMEs (`README.{ja-JP,ko-KR,pt-BR,zh-CN}.md`) and matching `docs/{ja-JP,ko-KR,pt-BR,zh-CN}/` subtrees. None had been updated since the v2.0.0 fork; all translations still titled themselves "GET SHIT DONE", pointed npm badges at `get-shit-done-cc`, and instructed users to install from the wrong package. 56 files / ~1.1 MB removed. The `product-name-purity` test gracefully tolerates missing files via `fs.existsSync` filtering, so 3017/3017 tests still pass. (f09949c)
 
 ## [1.35.0] - 2026-04-10
 
