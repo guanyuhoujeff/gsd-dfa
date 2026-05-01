@@ -53,6 +53,7 @@ It exists because **planning is the half of gsd-dfa with the highest leverage an
 - `/gsd-mini-domain` — ubiquitous language + bounded context map
 - `/gsd-mini-aggregate` — aggregate root, entities, value objects, invariants
 - `/gsd-mini-event-storm` — domain events, actors, commands, policies (the event-storming canvas, structured)
+- `/gsd-mini-storage` — storage choice + native schema, per aggregate or per bounded context (polyglot persistence supported)
 
 **Roadmap management:**
 - `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase`
@@ -170,7 +171,7 @@ This step is **only active under `--profile mini`** so the full profile keeps cu
 
 ## 5. New DDD commands (this proposal)
 
-Three new commands, each producing one artifact, each integrating with DFA.
+Four new commands, each producing one artifact, each integrating with DFA.
 
 ### 5.1 `/gsd-mini-domain <name>`
 
@@ -223,6 +224,89 @@ Three new commands, each producing one artifact, each integrating with DFA.
 - Policies map to scenarios in `/gsd-dfa-scenarios`
 - Hot spots become items in `/gsd-list-phase-assumptions`
 
+### 5.4 `/gsd-mini-storage <aggregate-name | --context <bounded-context>> [--storage <type>] [--with-ops]`
+
+**Produces:** `.planning/ddd/STORAGE-{aggregate-or-context}.md`
+
+**Why this is separate from `/gsd-mini-aggregate`:** Aggregate captures the **business concept**; storage captures the **physical choice**. The same aggregate may pick different storages in different contexts or scales. Polyglot persistence is the norm, not the exception, so storage gets its own artifact.
+
+**Scope (caller decides):**
+- Pass an aggregate name → one storage spec for that aggregate (polyglot-friendly)
+- Pass `--context <bounded-context>` → one shared storage spec for all aggregates in that context (typical when the team wants one transactional boundary per context)
+
+**Workflow (internally two phases — `--storage <type>` skips phase 1):**
+
+**Phase 1 — Decision.** AI reads the matching `AGGREGATE-{name}.md` and `EVENT-STORM-{context}.md`, then walks the user through:
+- Read/write ratio, query patterns (PK lookup / range scan / aggregation / graph traversal / semantic search)
+- Consistency needs (strong / eventual / causal)
+- Scale (data volume, ops/sec), latency budget
+- Existing infrastructure and team familiarity
+
+**Phase 2 — Specification.** Once a storage type is chosen, AI fills in the schema in that storage's **native language**.
+
+**Supported storage types (11):**
+
+| Type | Examples | Schema language |
+|---|---|---|
+| Relational | PostgreSQL, MySQL | SQL DDL |
+| Document | MongoDB, Couchbase | JSON Schema |
+| Key-value | Redis, DynamoDB | Key pattern + value structure |
+| Wide-column | Cassandra, ScyllaDB | CQL + partition key design |
+| Graph | Neo4j, Neptune | Node + relationship types |
+| Vector | Qdrant, pgvector, Weaviate | Collection + dimension + payload |
+| Time-series | InfluxDB, TimescaleDB | Measurement + tags + fields |
+| Search | Elasticsearch, OpenSearch | Mapping + analyzers |
+| Object store | S3, MinIO | Bucket / prefix layout |
+| Columnar analytics | ClickHouse, BigQuery, DuckDB, Snowflake | OLAP table DDL + partition / order keys |
+| Immutable event log | Kafka (long-term), EventStoreDB | Topic / stream layout + retention |
+
+**Artifact template:**
+
+```yaml
+---
+aggregate: order               # or: context: sales
+storage_type: document
+storage_engine: mongodb
+consistency: strong (single-document)
+scope: per-aggregate           # or: per-context
+schema_version: 1
+---
+
+## Decision rationale
+- Inputs surveyed: read/write ratio, query patterns, scale, latency, infra, team
+- Why this storage: ...
+- Alternatives considered and rejected: ...
+
+## Schema
+[native language: SQL DDL / JSON shape / Cypher node-types / Qdrant collection / etc.]
+
+## Indexes / access patterns
+[storage-native index definitions]
+
+## Query patterns
+- [query] — expected freq, latency target
+
+## Projections (lightweight; only if a read model exists in another store)
+- [denormalized view] in [other storage] — refreshed by [policy / event]
+- Note: full CQRS is deferred to gsd-mini v2 (see §8.4)
+
+## Compliance
+- PII fields: [...]
+- Retention: [...]
+- Encryption: at-rest? in-transit? field-level?
+- Region constraints: [...]
+
+## Operations (only emitted with --with-ops)
+- Backup strategy
+- Replication / HA
+- Sharding / partitioning
+```
+
+**Integration with downstream:**
+- Storage choice **influences DFA event vocabulary**: persistence-significant events (e.g., `record_committed`, `projection_caught_up`) become candidate DFA events
+- Indexes / access patterns **inform `/gsd-dfa-scenarios`**: which queries are critical paths (and thus need scenario coverage)
+- Consistency model **constrains forbidden transitions**: under eventual consistency some `(state, event)` cells are forbidden that would be valid under strong consistency
+
 ## 6. DDD ↔ DFA bridge (the killer feature)
 
 The bridge is what makes gsd-mini more valuable than just stripping execution off gsd-dfa:
@@ -239,6 +323,9 @@ Invariants             ──→   Forbidden transitions (F-XX)
 Policies               ──→   Self-loops with conditions (S-XX)
 External Systems       ──→   Black-box producers in scenario matrix
 Hot Spots              ──→   Unresolved cells in completeness matrix
+Storage choice         ──→   Persistence events become candidate DFA events
+Indexes / access pat.  ──→   Critical-path queries become scenario coverage
+Consistency model      ──→   Constrains which (state, event) cells are forbidden
 ```
 
 This bidirectional mapping means:
@@ -256,6 +343,7 @@ Suggested implementation order (each is one GSD phase):
 | **mini-1** | `bin/profiles/mini.json` + installer support for `--profile` flag | Install with `--profile mini`, verify only listed skills land |
 | **mini-2** | `/gsd-mini-domain` skeleton + ubiquitous language template | Run on a sample project, verify CONTEXT-MAP.md generated |
 | **mini-3** | `/gsd-mini-aggregate` + DFA skeleton emission | Verify AGGREGATE-{name}.md produced and DFA skeleton has matching states |
+| **mini-3.5** | `/gsd-mini-storage` + 11 storage type templates + decision-phase prompt set | Run on a sample aggregate; verify STORAGE-*.md contains decision rationale + native schema. Test `--storage <type>` skips phase 1. Test per-aggregate vs `--context` scope. |
 | **mini-4** | `/gsd-mini-event-storm` + event integration | Verify domain events appear as DFA events in subsequent `/gsd-dfa-model` runs |
 | **mini-5** | Verifier Step 5c (spec completeness) | Run on incomplete spec, verify gaps reported |
 | **mini-6** | Documentation (DDD-METHODOLOGY.md, GSD-MINI-USER-GUIDE.md) | Manual review |
@@ -286,6 +374,7 @@ Each phase is a normal GSD phase that can be run with the existing `/gsd-plan-ph
 - **Vocabulary drift between DDD and DFA artifacts** — mitigated by the verifier Step 5c cross-check
 - **Profile divergence over time** — mitigated by profile manifest being the single source of truth for what's IN
 - **DDD complexity overwhelming users new to it** — mitigated by `/gsd-mini-domain` having an opinionated default (it works without deep DDD knowledge)
+- **Wrong storage type chosen for an aggregate** — mitigated by `/gsd-mini-storage`'s decision-phase prompt set (read/write ratio, query patterns, consistency, scale, latency, infra, team). AI proposes; user decides. Storage choice is reversible at design time at low cost.
 - **gsd-mini becoming the more popular profile and execution surface stagnating** — feature, not bug
 
 ## 10. Non-goals
