@@ -27,6 +27,7 @@
       "ui-phase",
       "ai-integration-phase",
       "mini-domain",
+      "mini-aggregate",
       "add-phase",
       "insert-phase",
       "remove-phase",
