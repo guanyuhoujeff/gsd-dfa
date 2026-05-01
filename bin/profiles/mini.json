@@ -28,6 +28,7 @@
       "ai-integration-phase",
       "mini-domain",
       "mini-aggregate",
+      "mini-storage",
       "add-phase",
       "insert-phase",
       "remove-phase",
