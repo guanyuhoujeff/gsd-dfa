@@ -26,6 +26,7 @@
       "dfa-audit",
       "ui-phase",
       "ai-integration-phase",
+      "mini-domain",
       "add-phase",
       "insert-phase",
       "remove-phase",
