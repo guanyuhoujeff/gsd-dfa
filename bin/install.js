@@ -77,6 +77,14 @@ const hasBoth = args.includes('--both'); // Legacy flag, keeps working
 const hasAll = args.includes('--all');
 const hasUninstall = args.includes('--uninstall') || args.includes('-u');
 
+// --profile <name> selects an install profile manifest (bin/profiles/<name>.json).
+// Defaults to "full" (current behavior — install everything). The "mini" profile
+// strips the execution surface for planning-only use. See docs/GSD-MINI-DESIGN.md.
+const profileIdx = args.indexOf('--profile');
+const profileName = profileIdx >= 0 && profileIdx + 1 < args.length
+  ? args[profileIdx + 1]
+  : null;
+
 // Runtime selection - can be set by flags or interactive prompt
 let selectedRuntimes = [];
 if (hasAll) {
@@ -436,7 +444,7 @@ if (hasUninstall) {
 
 // Show help if requested
 if (hasHelp) {
-  console.log(`  ${yellow}Usage:${reset} npx gsd-dfa [options]\n\n  ${yellow}Options:${reset}\n    ${cyan}-g, --global${reset}              Install globally (to config directory)\n    ${cyan}-l, --local${reset}               Install locally (to current directory)\n    ${cyan}--claude${reset}                  Install for Claude Code only\n    ${cyan}--opencode${reset}                Install for OpenCode only\n    ${cyan}--gemini${reset}                  Install for Gemini only\n    ${cyan}--kilo${reset}                    Install for Kilo only\n    ${cyan}--codex${reset}                   Install for Codex only\n    ${cyan}--copilot${reset}                 Install for Copilot only\n    ${cyan}--antigravity${reset}             Install for Antigravity only\n    ${cyan}--cursor${reset}                  Install for Cursor only\n    ${cyan}--windsurf${reset}                Install for Windsurf only\n    ${cyan}--augment${reset}                 Install for Augment only\n    ${cyan}--trae${reset}                    Install for Trae only\n    ${cyan}--qwen${reset}                    Install for Qwen Code only\n    ${cyan}--cline${reset}                   Install for Cline only\n    ${cyan}--codebuddy${reset}              Install for CodeBuddy only\n    ${cyan}--all${reset}                     Install for all runtimes\n    ${cyan}-u, --uninstall${reset}           Uninstall GSD (remove all GSD files)\n    ${cyan}-c, --config-dir <path>${reset}   Specify custom config directory\n    ${cyan}-h, --help${reset}                Show this help message\n    ${cyan}--force-statusline${reset}        Replace existing statusline config\n\n  ${yellow}Examples:${reset}\n    ${dim}# Interactive install (prompts for runtime and location)${reset}\n    npx gsd-dfa\n\n    ${dim}# Install for Claude Code globally${reset}\n    npx gsd-dfa --claude --global\n\n    ${dim}# Install for Gemini globally${reset}\n    npx gsd-dfa --gemini --global\n\n    ${dim}# Install for Kilo globally${reset}\n    npx gsd-dfa --kilo --global\n\n    ${dim}# Install for Codex globally${reset}\n    npx gsd-dfa --codex --global\n\n    ${dim}# Install for Copilot globally${reset}\n    npx gsd-dfa --copilot --global\n\n    ${dim}# Install for Copilot locally${reset}\n    npx gsd-dfa --copilot --local\n\n    ${dim}# Install for Antigravity globally${reset}\n    npx gsd-dfa --antigravity --global\n\n    ${dim}# Install for Antigravity locally${reset}\n    npx gsd-dfa --antigravity --local\n\n    ${dim}# Install for Cursor globally${reset}\n    npx gsd-dfa --cursor --global\n\n    ${dim}# Install for Cursor locally${reset}\n    npx gsd-dfa --cursor --local\n\n    ${dim}# Install for Windsurf globally${reset}\n    npx gsd-dfa --windsurf --global\n\n    ${dim}# Install for Windsurf locally${reset}\n    npx gsd-dfa --windsurf --local\n\n    ${dim}# Install for Augment globally${reset}\n    npx gsd-dfa --augment --global\n\n    ${dim}# Install for Augment locally${reset}\n    npx gsd-dfa --augment --local\n\n    ${dim}# Install for Trae globally${reset}\n    npx gsd-dfa --trae --global\n\n    ${dim}# Install for Trae locally${reset}\n    npx gsd-dfa --trae --local\n\n    ${dim}# Install for Cline locally${reset}\n    npx gsd-dfa --cline --local\n\n    ${dim}# Install for CodeBuddy globally${reset}\n    npx gsd-dfa --codebuddy --global\n\n    ${dim}# Install for CodeBuddy locally${reset}\n    npx gsd-dfa --codebuddy --local\n\n    ${dim}# Install for all runtimes globally${reset}\n    npx gsd-dfa --all --global\n\n    ${dim}# Install to custom config directory${reset}\n    npx gsd-dfa --kilo --global --config-dir ~/.kilo-work\n\n    ${dim}# Install to current project only${reset}\n    npx gsd-dfa --claude --local\n\n    ${dim}# Uninstall GSD from Cursor globally${reset}\n    npx gsd-dfa --cursor --global --uninstall\n\n  ${yellow}Notes:${reset}\n    The --config-dir option is useful when you have multiple configurations.\n    It takes priority over CLAUDE_CONFIG_DIR / OPENCODE_CONFIG_DIR / GEMINI_CONFIG_DIR / KILO_CONFIG_DIR / CODEX_HOME / COPILOT_CONFIG_DIR / ANTIGRAVITY_CONFIG_DIR / CURSOR_CONFIG_DIR / WINDSURF_CONFIG_DIR / AUGMENT_CONFIG_DIR / TRAE_CONFIG_DIR / QWEN_CONFIG_DIR / CLINE_CONFIG_DIR / CODEBUDDY_CONFIG_DIR environment variables.\n`);
+  console.log(`  ${yellow}Usage:${reset} npx gsd-dfa [options]\n\n  ${yellow}Options:${reset}\n    ${cyan}-g, --global${reset}              Install globally (to config directory)\n    ${cyan}-l, --local${reset}               Install locally (to current directory)\n    ${cyan}--claude${reset}                  Install for Claude Code only\n    ${cyan}--opencode${reset}                Install for OpenCode only\n    ${cyan}--gemini${reset}                  Install for Gemini only\n    ${cyan}--kilo${reset}                    Install for Kilo only\n    ${cyan}--codex${reset}                   Install for Codex only\n    ${cyan}--copilot${reset}                 Install for Copilot only\n    ${cyan}--antigravity${reset}             Install for Antigravity only\n    ${cyan}--cursor${reset}                  Install for Cursor only\n    ${cyan}--windsurf${reset}                Install for Windsurf only\n    ${cyan}--augment${reset}                 Install for Augment only\n    ${cyan}--trae${reset}                    Install for Trae only\n    ${cyan}--qwen${reset}                    Install for Qwen Code only\n    ${cyan}--cline${reset}                   Install for Cline only\n    ${cyan}--codebuddy${reset}              Install for CodeBuddy only\n    ${cyan}--all${reset}                     Install for all runtimes\n    ${cyan}-u, --uninstall${reset}           Uninstall GSD (remove all GSD files)\n    ${cyan}-c, --config-dir <path>${reset}   Specify custom config directory\n    ${cyan}--profile <name>${reset}          Install profile (default: full). Use ${cyan}mini${reset} for planning-only (no execution surface). See bin/profiles/.\n    ${cyan}-h, --help${reset}                Show this help message\n    ${cyan}--force-statusline${reset}        Replace existing statusline config\n\n  ${yellow}Examples:${reset}\n    ${dim}# Interactive install (prompts for runtime and location)${reset}\n    npx gsd-dfa\n\n    ${dim}# Install for Claude Code globally${reset}\n    npx gsd-dfa --claude --global\n\n    ${dim}# Install for Gemini globally${reset}\n    npx gsd-dfa --gemini --global\n\n    ${dim}# Install for Kilo globally${reset}\n    npx gsd-dfa --kilo --global\n\n    ${dim}# Install for Codex globally${reset}\n    npx gsd-dfa --codex --global\n\n    ${dim}# Install for Copilot globally${reset}\n    npx gsd-dfa --copilot --global\n\n    ${dim}# Install for Copilot locally${reset}\n    npx gsd-dfa --copilot --local\n\n    ${dim}# Install for Antigravity globally${reset}\n    npx gsd-dfa --antigravity --global\n\n    ${dim}# Install for Antigravity locally${reset}\n    npx gsd-dfa --antigravity --local\n\n    ${dim}# Install for Cursor globally${reset}\n    npx gsd-dfa --cursor --global\n\n    ${dim}# Install for Cursor locally${reset}\n    npx gsd-dfa --cursor --local\n\n    ${dim}# Install for Windsurf globally${reset}\n    npx gsd-dfa --windsurf --global\n\n    ${dim}# Install for Windsurf locally${reset}\n    npx gsd-dfa --windsurf --local\n\n    ${dim}# Install for Augment globally${reset}\n    npx gsd-dfa --augment --global\n\n    ${dim}# Install for Augment locally${reset}\n    npx gsd-dfa --augment --local\n\n    ${dim}# Install for Trae globally${reset}\n    npx gsd-dfa --trae --global\n\n    ${dim}# Install for Trae locally${reset}\n    npx gsd-dfa --trae --local\n\n    ${dim}# Install for Cline locally${reset}\n    npx gsd-dfa --cline --local\n\n    ${dim}# Install for CodeBuddy globally${reset}\n    npx gsd-dfa --codebuddy --global\n\n    ${dim}# Install for CodeBuddy locally${reset}\n    npx gsd-dfa --codebuddy --local\n\n    ${dim}# Install for all runtimes globally${reset}\n    npx gsd-dfa --all --global\n\n    ${dim}# Install to custom config directory${reset}\n    npx gsd-dfa --kilo --global --config-dir ~/.kilo-work\n\n    ${dim}# Install to current project only${reset}\n    npx gsd-dfa --claude --local\n\n    ${dim}# Uninstall GSD from Cursor globally${reset}\n    npx gsd-dfa --cursor --global --uninstall\n\n  ${yellow}Notes:${reset}\n    The --config-dir option is useful when you have multiple configurations.\n    It takes priority over CLAUDE_CONFIG_DIR / OPENCODE_CONFIG_DIR / GEMINI_CONFIG_DIR / KILO_CONFIG_DIR / CODEX_HOME / COPILOT_CONFIG_DIR / ANTIGRAVITY_CONFIG_DIR / CURSOR_CONFIG_DIR / WINDSURF_CONFIG_DIR / AUGMENT_CONFIG_DIR / TRAE_CONFIG_DIR / QWEN_CONFIG_DIR / CLINE_CONFIG_DIR / CODEBUDDY_CONFIG_DIR environment variables.\n`);
   process.exit(0);
 }
 
@@ -5335,6 +5343,79 @@ function reportLocalPatches(configDir, runtime = 'claude') {
   return meta.files || [];
 }
 
+/**
+ * Load a profile manifest from bin/profiles/<name>.json.
+ * Returns { commands: Set<string>, agents: Set<string> } or null.
+ * Throws with a clear message if the named profile does not exist.
+ */
+function loadProfile(name) {
+  if (!name || name === 'full') return null; // Default: install everything
+
+  const profilePath = path.join(__dirname, 'profiles', `${name}.json`);
+  if (!fs.existsSync(profilePath)) {
+    const profilesDir = path.join(__dirname, 'profiles');
+    const available = fs.existsSync(profilesDir)
+      ? fs.readdirSync(profilesDir).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''))
+      : [];
+    throw new Error(
+      `Unknown profile: "${name}". Available profiles: ${available.join(', ') || '(none)'}. ` +
+      `The default "full" profile installs everything.`
+    );
+  }
+
+  const manifest = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+  if (!manifest.include || !Array.isArray(manifest.include.commands)) {
+    throw new Error(`Invalid profile manifest at ${profilePath}: missing include.commands array`);
+  }
+
+  return {
+    name: manifest.name || name,
+    description: manifest.description || '',
+    commands: new Set(manifest.include.commands),
+    agents: new Set(manifest.include.agents || []),
+  };
+}
+
+/**
+ * Stage a filtered copy of srcDir into a temp directory, including only files
+ * whose basename (without .md) is in allowSet. Returns the temp dir path.
+ *
+ * The temp dir is registered in stagedDirs so cleanupStagedDirs() can remove
+ * it after install finishes.
+ *
+ * Files outside the allowSet are silently skipped — this is the entire point.
+ */
+function stageFilteredDir(srcDir, allowSet, label, stagedDirs) {
+  if (!fs.existsSync(srcDir)) return srcDir; // Nothing to stage
+
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), `gsd-mini-${label}-`));
+  stagedDirs.push(tmpRoot);
+
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!entry.name.endsWith('.md')) continue;
+    const stem = entry.name.replace(/\.md$/, '');
+    if (!allowSet.has(stem)) continue;
+    fs.copyFileSync(path.join(srcDir, entry.name), path.join(tmpRoot, entry.name));
+  }
+  return tmpRoot;
+}
+
+/**
+ * Remove temp staging directories. Best-effort — ignores cleanup errors so
+ * a failed cleanup never masks a successful install.
+ */
+function cleanupStagedDirs(stagedDirs) {
+  for (const dir of stagedDirs) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+  }
+}
+
 function install(isGlobal, runtime = 'claude') {
   const isOpencode = runtime === 'opencode';
   const isGemini = runtime === 'gemini';
@@ -5396,6 +5477,21 @@ function install(isGlobal, runtime = 'claude') {
   // Track installation failures
   const failures = [];
 
+  // Resolve install profile (--profile <name>). Default: install everything.
+  // For non-default profiles, stage filtered copies of commands/gsd and agents
+  // into temp dirs that downstream copy helpers see as transparent sources.
+  const profile = loadProfile(profileName);
+  const stagedDirs = [];
+  if (profile) {
+    console.log(`  Profile: ${cyan}${profile.name}${reset}${profile.description ? ' — ' + dim + profile.description.split('—')[0].trim() + reset : ''}`);
+  }
+  const profileCommandsSrc = profile
+    ? stageFilteredDir(path.join(src, 'commands', 'gsd'), profile.commands, 'commands', stagedDirs)
+    : null;
+  const profileAgentsSrc = profile
+    ? stageFilteredDir(path.join(src, 'agents'), profile.agents, 'agents', stagedDirs)
+    : null;
+
   // Save any locally modified GSD files before they get wiped
   saveLocalPatches(targetDir);
 
@@ -5409,7 +5505,7 @@ function install(isGlobal, runtime = 'claude') {
     fs.mkdirSync(commandDir, { recursive: true });
 
     // Copy commands/gsd/*.md as command/gsd-*.md (flatten structure)
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyFlattenedCommands(gsdSrc, commandDir, 'gsd', pathPrefix, runtime);
     if (verifyInstalled(commandDir, 'command/gsd-*')) {
       const count = fs.readdirSync(commandDir).filter(f => f.startsWith('gsd-')).length;
@@ -5419,7 +5515,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isCodex) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsCodexSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir);
     if (installedSkillNames.length > 0) {
@@ -5429,7 +5525,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isCopilot) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsCopilotSkills(gsdSrc, skillsDir, 'gsd', isGlobal);
     if (fs.existsSync(skillsDir)) {
       const count = fs.readdirSync(skillsDir, { withFileTypes: true })
@@ -5444,7 +5540,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isAntigravity) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsAntigravitySkills(gsdSrc, skillsDir, 'gsd', isGlobal);
     if (fs.existsSync(skillsDir)) {
       const count = fs.readdirSync(skillsDir, { withFileTypes: true })
@@ -5459,7 +5555,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isCursor) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsCursorSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir); // reuse — same dir structure
     if (installedSkillNames.length > 0) {
@@ -5469,7 +5565,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isWindsurf) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsWindsurfSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir); // reuse — same dir structure
     if (installedSkillNames.length > 0) {
@@ -5479,7 +5575,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isAugment) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsAugmentSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir);
     if (installedSkillNames.length > 0) {
@@ -5489,7 +5585,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isTrae) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsTraeSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir);
     if (installedSkillNames.length > 0) {
@@ -5499,7 +5595,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isQwen) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsClaudeSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime, isGlobal);
     if (fs.existsSync(skillsDir)) {
       const count = fs.readdirSync(skillsDir, { withFileTypes: true })
@@ -5522,7 +5618,7 @@ function install(isGlobal, runtime = 'claude') {
     }
   } else if (isCodebuddy) {
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsCodebuddySkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime);
     const installedSkillNames = listCodexSkillNames(skillsDir);
     if (installedSkillNames.length > 0) {
@@ -5537,7 +5633,7 @@ function install(isGlobal, runtime = 'claude') {
   } else if (isGemini) {
     const commandsDir = path.join(targetDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     const gsdDest = path.join(commandsDir, 'gsd');
     copyWithPathReplacement(gsdSrc, gsdDest, pathPrefix, runtime, true, isGlobal);
     if (verifyInstalled(gsdDest, 'commands/gsd')) {
@@ -5548,7 +5644,7 @@ function install(isGlobal, runtime = 'claude') {
   } else if (isGlobal) {
     // Claude Code global: skills/ format (2.1.88+ compatibility)
     const skillsDir = path.join(targetDir, 'skills');
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     copyCommandsAsClaudeSkills(gsdSrc, skillsDir, 'gsd', pathPrefix, runtime, isGlobal);
     if (fs.existsSync(skillsDir)) {
       const count = fs.readdirSync(skillsDir, { withFileTypes: true })
@@ -5576,7 +5672,7 @@ function install(isGlobal, runtime = 'claude') {
     // commands from .claude/commands/gsd/, not .claude/skills/
     const commandsDir = path.join(targetDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });
-    const gsdSrc = path.join(src, 'commands', 'gsd');
+    const gsdSrc = profileCommandsSrc || path.join(src, 'commands', 'gsd');
     const gsdDest = path.join(commandsDir, 'gsd');
     copyWithPathReplacement(gsdSrc, gsdDest, pathPrefix, runtime, true, isGlobal);
     if (verifyInstalled(gsdDest, 'commands/gsd')) {
@@ -5614,7 +5710,7 @@ function install(isGlobal, runtime = 'claude') {
   }
 
   // Copy agents to agents directory
-  const agentsSrc = path.join(src, 'agents');
+  const agentsSrc = profileAgentsSrc || path.join(src, 'agents');
   if (fs.existsSync(agentsSrc)) {
     const agentsDest = path.join(targetDir, 'agents');
     fs.mkdirSync(agentsDest, { recursive: true });
@@ -6189,6 +6285,8 @@ function install(isGlobal, runtime = 'claude') {
     }
   }
 
+  cleanupStagedDirs(stagedDirs);
+
   return { settingsPath, settings, statuslineCommand, runtime, configDir: targetDir };
 }
 
@@ -6273,6 +6371,7 @@ function finishInstall(settingsPath, settings, statuslineCommand, shouldInstallS
   if (runtime === 'augment') command = '/gsd-new-project';
   if (runtime === 'trae') command = '/gsd-new-project';
   if (runtime === 'cline') command = '/gsd-new-project';
+
   console.log(`
   ${green}Done!${reset} Open a blank directory in ${program} and run ${cyan}${command}${reset}.
 
