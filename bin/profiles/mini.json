@@ -29,6 +29,7 @@
       "mini-domain",
       "mini-aggregate",
       "mini-storage",
+      "mini-event-storm",
       "add-phase",
       "insert-phase",
       "remove-phase",
