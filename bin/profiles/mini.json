@@ -54,6 +54,7 @@
       "set-profile",
       "update",
       "join-discord",
+      "manager",
       "workstreams",
       "list-workspaces",
       "new-workspace",
