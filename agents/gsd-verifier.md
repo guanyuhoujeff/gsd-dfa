@@ -399,6 +399,143 @@ ls "$PHASE_DIR"/*-DFA-SCENARIOS.md 2>/dev/null
 
 **If no DFA artifacts found:** Skip this step entirely.
 
+## Step 5c: Spec Completeness Coverage (if DDD artifacts exist)
+
+When DDD artifacts exist in `.planning/ddd/`, run the gsd-mini spec-completeness checks. This step targets the **planning-only profile** (`--profile mini`) per `docs/GSD-MINI-DESIGN.md` §4.3, but is also valuable for any project that uses DDD modeling alongside execution.
+
+```bash
+ls .planning/ddd/*.md 2>/dev/null
+```
+
+**If any `.planning/ddd/*.md` found, run all five checks below.** If none found, skip this step entirely.
+
+### 5c.1: Requirements coverage
+
+Every `REQ-XX` ID in `.planning/REQUIREMENTS.md` must appear in at least one phase artifact (`CONTEXT.md`, `PLAN.md`) or design contract (`UI-SPEC.md`, `AI-SPEC.md`, `AGGREGATE-*.md`, `STORAGE-*.md`, `EVENT-STORM-*.md`).
+
+```bash
+# Extract all REQ-XX IDs from REQUIREMENTS.md
+grep -oE 'REQ-[A-Z0-9-]+' .planning/REQUIREMENTS.md | sort -u
+
+# For each REQ-XX, search across phases and design contracts
+for req in $REQ_IDS; do
+  hits=$(grep -rl "$req" .planning/phases .planning/ddd .planning/ui-spec.md .planning/ai-spec.md 2>/dev/null | wc -l)
+  [ "$hits" -eq 0 ] && echo "ORPHAN: $req"
+done
+```
+
+Status per REQ: COVERED (≥1 reference) | ORPHAN (0 references — gap).
+
+### 5c.2: Phase artifact completeness
+
+Every phase directory under `.planning/phases/` must have:
+- A `CONTEXT.md` (vision captured) **OR** a `PLAN.md` (planning done) — phase with neither is a stub
+- If the phase touches a stateful subsystem (signal: ROADMAP entry mentions state, lifecycle, transition, FSM, or matching keywords), it should have a `*-DFA-*.md`
+
+```bash
+for phase_dir in .planning/phases/*/; do
+  has_context=0
+  has_plan=0
+  has_dfa=0
+  ls "$phase_dir"/*-CONTEXT.md 2>/dev/null && has_context=1
+  ls "$phase_dir"/*-PLAN.md 2>/dev/null && has_plan=1
+  ls "$phase_dir"/*-DFA-*.md 2>/dev/null && has_dfa=1
+  # Heuristic: stateful if phase name or ROADMAP entry mentions lifecycle keywords
+done
+```
+
+Status per phase: COMPLETE | STUB (no CONTEXT, no PLAN) | MISSING-DFA (stateful but no DFA).
+
+### 5c.3: Aggregate invariants
+
+Every `AGGREGATE-{name}.md` must have a non-empty Invariants section (≥1 `INV-XX` entry that is not the template placeholder).
+
+```bash
+for agg_file in .planning/ddd/AGGREGATE-*.md; do
+  inv_count=$(grep -cE '^\| INV-[0-9]+' "$agg_file" 2>/dev/null)
+  [ "$inv_count" -eq 0 ] && echo "NO-INVARIANTS: $agg_file"
+done
+```
+
+Status per aggregate: HAS-INVARIANTS | NO-INVARIANTS (gap — invariant-free aggregates rarely need to be aggregates).
+
+### 5c.4: Event storm producer / consumer coverage
+
+For every `EVENT-STORM-{context}.md`, every domain event (`EV-XX`) must have:
+- ≥1 **producing command** in the same storm (a `CMD-XX` whose "Produces events" column references this `EV-XX`), OR be sourced from an external system row
+- ≥1 **consumer**: either a policy (`POL-XX`) firing on it, a read model (`RM-XX`) updated by it, or an external system listening for it
+
+Events with no producer suggest a missing command. Events with no consumer are orphan events — captured but never reacted to.
+
+```bash
+for storm in .planning/ddd/EVENT-STORM-*.md; do
+  ev_ids=$(grep -oE 'EV-[0-9]+' "$storm" | sort -u)
+  for ev in $ev_ids; do
+    # Look for the EV-XX appearing in a producing context
+    producers=$(grep -E "Produces.*$ev|$ev.*from external" "$storm" | wc -l)
+    consumers=$(grep -E "When.*$ev.*then|$ev.*update|$ev.*consume" "$storm" | wc -l)
+    [ "$producers" -eq 0 ] && echo "NO-PRODUCER: $ev in $storm"
+    [ "$consumers" -eq 0 ] && echo "NO-CONSUMER: $ev in $storm"
+  done
+done
+```
+
+Status per event: COMPLETE | NO-PRODUCER | NO-CONSUMER | ORPHAN (both).
+
+### 5c.5: PLAN.md execution-leak lint
+
+PLAN.md tasks under the planning-only profile should describe **what** must be specified, not **how** to execute. Scan task descriptions for execution verbs that imply runtime work — these are signs the spec is leaking into execution territory.
+
+Forbidden verbs in task lines (warn, don't block):
+- `implement`, `code up`, `write the function`, `build`, `deploy`, `ship`, `release`, `merge`, `commit`
+- `run the test`, `start the service`, `spawn`
+
+```bash
+for plan in .planning/phases/*/*-PLAN.md; do
+  grep -inE '\b(implement|code up|deploy|ship|merge|commit|spawn|build the |run the test|start the service)\b' "$plan" 2>/dev/null
+done
+```
+
+Status per match: WARN (planning-only spec leak — convert to "specify X" / "decide Y" / "model Z" form).
+
+### 5c report (add to VERIFICATION.md)
+
+```markdown
+### Spec Completeness Coverage (gsd-mini)
+
+#### Requirements coverage
+| REQ ID | Coverage | Found in |
+|--------|----------|----------|
+| REQ-AUTH-01 | COVERED | phases/03-auth/03-01-PLAN.md, ddd/AGGREGATE-Session.md |
+| REQ-AUTH-02 | ORPHAN  | (none) — GAP |
+
+#### Phase artifact completeness
+| Phase | CONTEXT | PLAN | DFA needed | DFA present | Status |
+|-------|---------|------|-----------|-------------|--------|
+| 03-auth | ✓ | ✓ | yes | ✓ | COMPLETE |
+| 04-billing | ✓ | ✗ | yes | ✗ | STUB |
+
+#### Aggregate invariants
+| Aggregate | INV count | Status |
+|-----------|-----------|--------|
+| Order | 5 | HAS-INVARIANTS |
+| AuditLog | 0 | NO-INVARIANTS — GAP |
+
+#### Event storm coverage
+| Storm | Total events | NO-PRODUCER | NO-CONSUMER |
+|-------|-------------|-------------|-------------|
+| Sales | 12 | 0 | 1 (EV-09) |
+
+#### PLAN.md execution-leak lint
+| Phase | Plan | Line | Match | Suggested rewrite |
+|-------|------|------|-------|-------------------|
+| 03-auth | 03-01-PLAN.md | 42 | "implement OAuth handler" | "specify OAuth handler interface and acceptance criteria" |
+
+**Spec Score:** {covered_reqs}/{total_reqs} requirements + {complete_phases}/{total_phases} phases + {invariant_aggs}/{total_aggs} aggregates + {complete_events}/{total_events} events covered. Execution leaks: {n}.
+```
+
+**Activation:** Step 5c runs whenever any `.planning/ddd/*.md` exists. There is no separate `--profile mini` flag check at the verifier level; the presence of DDD artifacts is the signal.
+
 ## Step 6: Check Requirements Coverage
 
 **6a. Extract requirement IDs from PLAN frontmatter:**
