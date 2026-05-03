@@ -31,7 +31,7 @@ AGGREGATE_SLUG=$(echo "$AGGREGATE_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '
 DDD_DIR=".planning/ddd"
 DFA_DIR=".planning/dfa"
 mkdir -p "$DDD_DIR" "$DFA_DIR"
-AGGREGATE_FILE="$DDD_DIR/AGGREGATE-${AGGREGATE_NAME}.md"
+AGGREGATE_FILE="$DDD_DIR/AGGREGATE-${AGGREGATE_SLUG}.md"
 DFA_SKELETON_FILE="$DFA_DIR/DFA-${AGGREGATE_SLUG}.md"
 ```
 

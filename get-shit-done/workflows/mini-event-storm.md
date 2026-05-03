@@ -57,8 +57,11 @@ If `CONTEXT` is empty:
 - No `CONTEXT_MAP`: set `CONTEXT="(unspecified)"` and add a hot spot in step 11 noting that contexts haven't been mapped
 
 ```bash
+# Slug for filename (lowercase, dashes, alnum-only) — handles contexts with
+# spaces like "Sales Operations" without producing literal-space filenames.
+# Matches the slug rules in mini-aggregate / mini-storage.
 CONTEXT_SLUG=$(echo "$CONTEXT" | tr '[:upper:] ' '[:lower:]-' | sed 's/[^a-z0-9-]//g')
-EVENT_STORM_FILE="$DDD_DIR/EVENT-STORM-${CONTEXT}.md"
+EVENT_STORM_FILE="$DDD_DIR/EVENT-STORM-${CONTEXT_SLUG}.md"
 ```
 
 If `EVENT_STORM_FILE` exists, ask whether to regenerate (default: no) or to merge new findings into the existing file.

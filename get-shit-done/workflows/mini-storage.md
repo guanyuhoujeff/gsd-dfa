@@ -28,9 +28,16 @@ fi
 
 [ -z "$SCOPE_NAME" ] && { echo "Missing scope. Usage: /gsd-mini-storage <aggregate-name> | --context <name>"; exit 1; }
 
-# Validate scope exists
+# Slug for filenames (lowercase, dashes, alnum-only) — matches mini-aggregate
+# and mini-event-storm slug rules so all artifacts cross-reference cleanly.
+SCOPE_SLUG=$(echo "$SCOPE_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | sed 's/[^a-z0-9-]//g')
+mkdir -p "$DDD_DIR"
+
+# Validate scope exists. Look up aggregate file by SLUG, not raw name —
+# /gsd-mini-aggregate writes AGGREGATE-{slug}.md, so case mismatches
+# (`Order` vs `order`) must still resolve.
 if [ "$SCOPE_TYPE" = "aggregate" ]; then
-  AGGREGATE_FILE="$DDD_DIR/AGGREGATE-${SCOPE_NAME}.md"
+  AGGREGATE_FILE="$DDD_DIR/AGGREGATE-${SCOPE_SLUG}.md"
   if [ ! -f "$AGGREGATE_FILE" ]; then
     echo "Aggregate spec not found: $AGGREGATE_FILE"
     echo "Run /gsd-mini-aggregate $SCOPE_NAME first, or pass --context if you want per-context scope."
@@ -38,10 +45,7 @@ if [ "$SCOPE_TYPE" = "aggregate" ]; then
   fi
 fi
 
-# Slug for filenames
-SCOPE_SLUG=$(echo "$SCOPE_NAME" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | sed 's/[^a-z0-9-]//g')
-mkdir -p "$DDD_DIR"
-STORAGE_FILE="$DDD_DIR/STORAGE-${SCOPE_NAME}.md"
+STORAGE_FILE="$DDD_DIR/STORAGE-${SCOPE_SLUG}.md"
 ```
 
 If `STORAGE_FILE` exists, ask whether to regenerate (default: no — let user diff manually).
