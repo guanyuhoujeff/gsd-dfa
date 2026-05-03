@@ -65,12 +65,14 @@ It exists because **planning is the half of gsd-dfa with the highest leverage an
 - `/gsd-session-report`, `/gsd-stats`, `/gsd-milestone-summary`
 - `/gsd-thread`, `/gsd-note`, `/gsd-add-todo`, `/gsd-check-todos`
 - `/gsd-next`, `/gsd-do` (router)
-- `/gsd-help`, `/gsd-settings`, `/gsd-set-profile`, `/gsd-update`
-- `/gsd-workstreams`, `/gsd-list-workspaces`, `/gsd-new-workspace`, `/gsd-remove-workspace`
+- `/gsd-help`, `/gsd-settings`, `/gsd-set-profile`, `/gsd-update`, `/gsd-join-discord`
+- `/gsd-workstreams`, `/gsd-list-workspaces`, `/gsd-new-workspace`, `/gsd-remove-workspace`, `/gsd-manager`
 - `/gsd-health`, `/gsd-intel`, `/gsd-cleanup`, `/gsd-reapply-patches`
 - `/gsd-import`, `/gsd-from-gsd2`
 - `/gsd-forensics`, `/gsd-profile-user`
 - `/gsd-docs-update`
+
+> **Amendment 2026-05-02:** `/gsd-join-discord` (community link) and `/gsd-manager` (interactive multi-phase command center) were folded into the Session and state group during implementation — both are pure planning-side utilities with no execution semantics. Originally omitted from this draft; recorded here so `bin/profiles/mini.json` matches the design source-of-truth.
 
 **Verification (planning-side only):**
 - `/gsd-verify-work` — adapted to verify spec completeness, not implementation UAT
