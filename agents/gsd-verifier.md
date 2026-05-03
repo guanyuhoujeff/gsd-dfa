@@ -462,25 +462,58 @@ Status per aggregate: HAS-INVARIANTS | NO-INVARIANTS (gap — invariant-free agg
 ### 5c.4: Event storm producer / consumer coverage
 
 For every `EVENT-STORM-{context}.md`, every domain event (`EV-XX`) must have:
-- ≥1 **producing command** in the same storm (a `CMD-XX` whose "Produces events" column references this `EV-XX`), OR be sourced from an external system row
+- ≥1 **producing command** in the same storm (a `CMD-XX` row referencing this `EV-XX`), OR be sourced from an external system row
 - ≥1 **consumer**: either a policy (`POL-XX`) firing on it, a read model (`RM-XX`) updated by it, or an external system listening for it
 
 Events with no producer suggest a missing command. Events with no consumer are orphan events — captured but never reacted to.
 
+The check is **section-aware**: where an `EV-XX` reference appears determines whether it counts as a producer or consumer. An `EV-XX` in section 1 (Domain Events) is just the event's own definition — it does NOT count as either side. Cross-references in sections 2 / 5 / 6 / 7 are what populate the counts:
+
+| Section | EV-XX reference there counts as |
+|---------|---------------------------------|
+| 1. Domain Events | own definition (not a producer or consumer) |
+| 2. Commands | producer (the command produces this event) |
+| 5. Policies | consumer (the policy reacts to this event) |
+| 6. External Systems | producer AND consumer (depending on column — counted as both for safety) |
+| 7. Read Models | consumer (the read model is updated by this event) |
+| 8. Hot Spots | neither (parking-lot items don't count as coverage) |
+
 ```bash
 for storm in .planning/ddd/EVENT-STORM-*.md; do
-  ev_ids=$(grep -oE 'EV-[0-9]+' "$storm" | sort -u)
-  for ev in $ev_ids; do
-    # Look for the EV-XX appearing in a producing context
-    producers=$(grep -E "Produces.*$ev|$ev.*from external" "$storm" | wc -l)
-    consumers=$(grep -E "When.*$ev.*then|$ev.*update|$ev.*consume" "$storm" | wc -l)
-    [ "$producers" -eq 0 ] && echo "NO-PRODUCER: $ev in $storm"
-    [ "$consumers" -eq 0 ] && echo "NO-CONSUMER: $ev in $storm"
-  done
+  awk -v file="$storm" '
+    /^## .*Domain Events/    { section="events";     next }
+    /^## .*Commands/         { section="commands";   next }
+    /^## .*Actors/           { section="actors";     next }
+    /^## .*Aggregates/       { section="aggregates"; next }
+    /^## .*Policies/         { section="policies";   next }
+    /^## .*External Systems/ { section="externals";  next }
+    /^## .*Read Models/      { section="readmodels"; next }
+    /^## .*Hot Spots/        { section="hotspots";   next }
+    /^## /                   { section="other";      next }
+    {
+      while (match($0, /EV-[0-9]+/)) {
+        ev = substr($0, RSTART, RLENGTH)
+        if (section == "events")     events[ev] = 1
+        if (section == "commands")   producers[ev]++
+        if (section == "externals")  { producers[ev]++; consumers[ev]++ }
+        if (section == "policies")   consumers[ev]++
+        if (section == "readmodels") consumers[ev]++
+        $0 = substr($0, RSTART + RLENGTH)
+      }
+    }
+    END {
+      for (ev in events) {
+        if (!(ev in producers)) print "NO-PRODUCER: " ev " in " file
+        if (!(ev in consumers)) print "NO-CONSUMER: " ev " in " file
+      }
+    }
+  ' "$storm"
 done
 ```
 
 Status per event: COMPLETE | NO-PRODUCER | NO-CONSUMER | ORPHAN (both).
+
+**Why awk and not grep:** the previous grep `Produces.*$ev` matched the literal word "Produces" which only appears in column headers, so it counted zero producers in real storm files. The previous `$ev.*update` consumer regex matched any line containing the event followed by "update" anywhere, which created false positives for hot-spot rows discussing updates. Section-aware parsing eliminates both classes of error.
 
 ### 5c.5: PLAN.md execution-leak lint
 
